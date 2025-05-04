@@ -9,3 +9,4 @@ serviceAccountKey.json
 
 # VSCode
 .vscode/
+firebase-service-account.json
