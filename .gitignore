@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+*.env
+venv/
+
+# Firebase Admin SDK credential
+serviceAccountKey.json
+
+# VSCode
+.vscode/
