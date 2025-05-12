@@ -5,8 +5,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.basicMarquee // 수정: basicMarquee 직접 임포트
-// import androidx.compose.foundation.clickable // DayCellNew에서 선택 기능을 제거했으므로 주석 처리 또는 삭제
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,36 +30,44 @@ import androidx.compose.ui.unit.sp
 import com.example.daytogether.R
 import com.example.daytogether.data.model.CalendarEvent
 import com.example.daytogether.data.model.WeeklyCalendarDay
+// MonthlyCalendarView 임포트 경로 확인! (ui.home.composables 또는 ui.home)
+import com.example.daytogether.ui.home.MonthlyCalendarView
 import com.example.daytogether.ui.theme.*
 import java.text.SimpleDateFormat
-import java.util.*
+import java.time.LocalDate // LocalDate 임포트
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.util.Calendar
+import java.util.Locale
 import kotlin.random.Random
 
 @Composable
 fun HomeScreen() {
-    var upcomingAnniversaryText by remember { mutableStateOf("D-3 가족 기념일! 오늘은 즐거운 하루 보내세요! 반복 확인용 텍스트") }
+    var upcomingAnniversaryText by remember { mutableStateOf("D-3 가족 기념일! 오늘은 즐거운 하루 보내세요!") }
     var dDayTextState by remember { mutableStateOf("D-3") }
     var isAnniversaryAvailable by remember { mutableStateOf(true) }
     var dDayTitleState by remember { mutableStateOf(if (isAnniversaryAvailable) "엄마 생일" else "기념일 없음") }
 
-    val currentYearMonthState by remember {
-        val cal = Calendar.getInstance()
-        val sdf = SimpleDateFormat("yyyy년 MM월", Locale.KOREAN)
-        mutableStateOf(sdf.format(cal.time))
+    var currentYearMonth by remember { mutableStateOf(YearMonth.now()) }
+    val currentYearMonthFormatted = remember(currentYearMonth) {
+        val formatter = DateTimeFormatter.ofPattern("yyyy년 MM월", Locale.KOREAN)
+        currentYearMonth.format(formatter)
     }
 
-    val todayCalendar = Calendar.getInstance()
-    val todayDateStr = todayCalendar.get(Calendar.DAY_OF_MONTH).toString()
+    val today = LocalDate.now()
+    var isMonthlyView by remember { mutableStateOf(false) }
+    var monthlySelectedDate by remember { mutableStateOf<LocalDate?>(null) } // 월간 캘린더 선택 날짜
 
-    val weeklyCalendarDataState = remember(todayDateStr) {
+    val weeklyCalendarDataState = remember(currentYearMonth, today) {
+        val todayDateStr = today.dayOfMonth.toString()
         listOf(
-            WeeklyCalendarDay("14", "일", isToday = "14" == todayDateStr),
-            WeeklyCalendarDay("15", "월", events = listOf(CalendarEvent("회의"), CalendarEvent("미팅 길어지면 이렇게")), isToday = "15" == todayDateStr),
-            WeeklyCalendarDay("16", "화", events = listOf(CalendarEvent("점심 약속")), isToday = "16" == todayDateStr),
-            WeeklyCalendarDay("17", "수", events = listOf(CalendarEvent("저녁 약속"), CalendarEvent("영화 보기"), CalendarEvent("과제")), isToday = "17" == todayDateStr),
-            WeeklyCalendarDay("18", "목", events = listOf(CalendarEvent("발표"), CalendarEvent("과제"), CalendarEvent("스터디"), CalendarEvent("저녁")), isToday = "18" == todayDateStr),
-            WeeklyCalendarDay("19", "금", isToday = "19" == todayDateStr),
-            WeeklyCalendarDay("20", "토", events = listOf(CalendarEvent("영화")), isToday = "20" == todayDateStr)
+            WeeklyCalendarDay("14", "일", isToday = "14" == todayDateStr && currentYearMonth.month == today.month && currentYearMonth.year == today.year),
+            WeeklyCalendarDay("15", "월", events = listOf(CalendarEvent("회의"), CalendarEvent("미팅 길어지면 이렇게 표시됩니다.")), isToday = "15" == todayDateStr && currentYearMonth.month == today.month && currentYearMonth.year == today.year),
+            WeeklyCalendarDay("16", "화", events = listOf(CalendarEvent("점심 약속입니다")), isToday = "16" == todayDateStr && currentYearMonth.month == today.month && currentYearMonth.year == today.year),
+            WeeklyCalendarDay("17", "수", events = listOf(CalendarEvent("저녁 약속"), CalendarEvent("영화 보기"), CalendarEvent("과제")), isToday = "17" == todayDateStr && currentYearMonth.month == today.month && currentYearMonth.year == today.year),
+            WeeklyCalendarDay("18", "목", events = listOf(CalendarEvent("발표"), CalendarEvent("과제"), CalendarEvent("스터디"), CalendarEvent("저녁")), isToday = "18" == todayDateStr && currentYearMonth.month == today.month && currentYearMonth.year == today.year),
+            WeeklyCalendarDay("19", "금", isToday = "19" == todayDateStr && currentYearMonth.month == today.month && currentYearMonth.year == today.year),
+            WeeklyCalendarDay("20", "토", events = listOf(CalendarEvent("영화 보러 가는 날")), isToday = "20" == todayDateStr && currentYearMonth.month == today.month && currentYearMonth.year == today.year)
         )
     }
     var isQuestionAnsweredByAllState by remember { mutableStateOf(false) }
@@ -79,8 +87,17 @@ fun HomeScreen() {
         upcomingAnniversaryText = upcomingAnniversaryText,
         dDayText = dDayTextState,
         dDayTitle = dDayTitleState,
-        currentYearMonth = currentYearMonthState,
+        currentYearMonth = currentYearMonth,
+        currentYearMonthFormatted = currentYearMonthFormatted,
         weeklyCalendarData = weeklyCalendarDataState,
+        isMonthlyView = isMonthlyView,
+        onToggleCalendarView = { isMonthlyView = !isMonthlyView },
+        onMonthChange = { newMonth ->
+            currentYearMonth = newMonth
+            monthlySelectedDate = null // 월 변경 시 선택 해제
+        },
+        monthlySelectedDate = monthlySelectedDate, // 월간 캘린더 선택 날짜 전달
+        onMonthlyDateSelected = { date -> monthlySelectedDate = date }, // 월간 캘린더 날짜 선택 콜백
         isQuestionAnsweredByAll = isQuestionAnsweredByAllState,
         aiQuestion = aiQuestionState,
         familyQuote = familyQuoteState,
@@ -98,8 +115,14 @@ fun ActualHomeScreenContent(
     upcomingAnniversaryText: String,
     dDayText: String,
     dDayTitle: String,
-    currentYearMonth: String,
+    currentYearMonth: YearMonth,
+    currentYearMonthFormatted: String,
     weeklyCalendarData: List<WeeklyCalendarDay>,
+    isMonthlyView: Boolean,
+    onToggleCalendarView: () -> Unit,
+    onMonthChange: (YearMonth) -> Unit,
+    monthlySelectedDate: LocalDate?, // 월간 캘린더용 선택된 날짜
+    onMonthlyDateSelected: (LocalDate) -> Unit, // 월간 캘린더용 날짜 선택 콜백
     isQuestionAnsweredByAll: Boolean,
     aiQuestion: String,
     familyQuote: String,
@@ -110,13 +133,12 @@ fun ActualHomeScreenContent(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(vertical = 20.dp), // 상하 전체 여백 증가
-        verticalArrangement = Arrangement.spacedBy(32.dp) // 1. 레이아웃 간격 (이전 30dp)
+            .padding(vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(30.dp)
     ) {
         AnniversaryBoard(text = upcomingAnniversaryText, modifier = Modifier.fillMaxWidth())
 
-        // "빨간색 칸" 영역 (D-Day, 구름)
-        Column(modifier = Modifier.padding(horizontal = 22.dp)) { // 좌우 패딩 약간 증가
+        Column(modifier = Modifier.padding(horizontal = 20.dp)) {
             DDaySectionView(
                 dDayText = dDayText,
                 dDayTitle = dDayTitle,
@@ -124,41 +146,61 @@ fun ActualHomeScreenContent(
             )
         }
 
-        // "파란색 칸" 영역 (년월, 주간 캘린더)
-        Column(modifier = Modifier.padding(horizontal = 22.dp)) { // 좌우 패딩 약간 증가
+
+        Column(modifier = Modifier.padding(horizontal = 22.dp)) { // 캘린더 섹션
             Text(
-                text = currentYearMonth,
+                text = currentYearMonthFormatted,
                 color = TextPrimary,
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold, fontSize = 21.sp),
-                modifier = Modifier.align(Alignment.Start)
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
+                modifier = Modifier
+                    .align(Alignment.Start)
+                    .clickable {
+                        // 년/월 텍스트 클릭 시 항상 주간/월간 뷰 토글
+                        onToggleCalendarView()
+                        // 월간 뷰 상태에서 년/월 텍스트를 다시 클릭하면 주간 뷰로 돌아감.
+                        // 월간 캘린더 헤더 내부의 년/월 텍스트를 클릭해야 년/월 피커가 뜨도록 MonthlyCalendarView에서 onShowYearMonthPicker를 사용.
+                    }
             )
             Spacer(modifier = Modifier.height(12.dp))
-            // 5. 원래 있던 캘린더 박스(Card)는 없애고 Row로 바로 구성
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp) // 주간 캘린더 전체 높이 유지
-                    .border(BorderStroke(1.dp, TextPrimary), RoundedCornerShape(10.dp)) // 4. 캘린더 외곽선 추가 및 둥글게
-                    .padding(horizontal = 2.dp, vertical = 8.dp),
-            ) {
-                weeklyCalendarData.forEachIndexed { index, dayData ->
-                    DayCellNew(
-                        dateData = dayData,
-                        modifier = Modifier.weight(1f).fillMaxHeight()
-                    )
-                    if (index < weeklyCalendarData.size - 1) {
-                        VerticalDivider(
-                            color = TextPrimary.copy(alpha = 0.2f),
-                            thickness = 1.dp,
-                            modifier = Modifier.fillMaxHeight().width(1.dp).padding(vertical = 6.dp)
+
+            if (isMonthlyView) {
+                MonthlyCalendarView(
+                    currentMonth = currentYearMonth,
+                    onMonthChange = onMonthChange,
+                    onDateClick = onMonthlyDateSelected,
+                    onAddEventClick = { /* TODO */ },
+                    onShowYearMonthPicker = { /* TODO: 실제 년/월 피커 표시 로직 연결 */ },
+                    selectedDateForDetails = monthlySelectedDate,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+            } else {
+                // 주간 캘린더
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .border(BorderStroke(1.dp, TextPrimary), RoundedCornerShape(10.dp))
+                        .padding(horizontal = 2.dp, vertical = 8.dp),
+                ) {
+                    weeklyCalendarData.forEachIndexed { index, dayData ->
+                        DayCellNew(
+                            dateData = dayData,
+                            modifier = Modifier.weight(1f).fillMaxHeight()
                         )
+                        if (index < weeklyCalendarData.size - 1) {
+                            VerticalDivider(
+                                color = TextPrimary.copy(alpha = 0.2f),
+                                thickness = 1.dp,
+                                modifier = Modifier.fillMaxHeight().width(1.dp).padding(vertical = 6.dp)
+                            )
+                        }
                     }
                 }
             }
         }
 
-        // "검은색 칸" 영역 (오늘의 질문 관련)
-        Column(modifier = Modifier.padding(horizontal = 22.dp)) { // 좌우 패딩 약간 증가
+        Column(modifier = Modifier.padding(horizontal = 20.dp)) {
             TodayQuestionHeaderWithAlert(isAnsweredByAll = isQuestionAnsweredByAll)
             Spacer(modifier = Modifier.height(12.dp))
             TodayQuestionContentCard(questionText = aiQuestion)
@@ -174,9 +216,9 @@ fun ActualHomeScreenContent(
 
         QuoteView(
             quote = familyQuote,
-            modifier = Modifier.padding(horizontal = 22.dp) // 좌우 패딩 약간 증가
+            modifier = Modifier.padding(horizontal = 20.dp)
         )
-        Spacer(modifier = Modifier.height(10.dp)) // 하단 여백 약간 증가
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
@@ -215,11 +257,11 @@ fun DDaySectionView(dDayText: String, dDayTitle: String, cloudImageResList: List
             modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.Start
         ) {
-            Text(text = dDayText, color = TextPrimary, style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.ExtraBold, fontSize = 48.sp))
+            Text(text = dDayText, color = TextPrimary, style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold, fontSize = 48.sp))
             Text(
                 text = dDayTitle,
                 color = TextPrimary,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium, fontSize = 17.sp, lineHeight = 20.sp), // 2. 엄마생일 Bold
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, fontSize = 17.sp, lineHeight = 20.sp),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.widthIn(max = 100.dp)
@@ -242,119 +284,67 @@ fun DDaySectionView(dDayText: String, dDayTitle: String, cloudImageResList: List
     }
 }
 
-// WeeklyCalendarCardView 함수는 이제 Row로 직접 구성되므로 삭제하거나,
-// 이전처럼 Card로 감싸는 형태를 유지하고 싶다면 내부 Row에만 수정 적용합니다.
-// 여기서는 요청에 따라 Card를 제거하고 Row로 바로 구성하는 형태로 변경합니다.
-// (ActualHomeScreenContent에서 Row로 직접 호출하도록 변경됨)
-
+// 주간 캘린더의 DayCellNew
 @Composable
 fun DayCellNew(
     dateData: WeeklyCalendarDay,
-    modifier: Modifier = Modifier // isSelected와 onDateClicked는 이전 요청에 따라 제거됨
+    modifier: Modifier = Modifier
 ) {
     val dayColor = TextPrimary
-    // 4. 오늘 날짜 칸에만 전광판 배경색(투명도 50%) 적용
     val cellContentBackgroundColor = if (dateData.isToday) AnniversaryBoardBackground.copy(alpha = 0.5f) else Color.Transparent
-    // 오늘 날짜 테두리는 유지, 다른 날짜 테두리는 없음 (클릭 효과 제거됨)
     val cellBorderColor = if (dateData.isToday) TextPrimary else Color.Transparent
     val cellBorderThickness = if (dateData.isToday) 1.5.dp else 0.dp
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
-            .clip(RoundedCornerShape(0.dp)) // 전체 셀의 모서리는 직각
-            .border(BorderStroke(cellBorderThickness, cellBorderColor), RoundedCornerShape(0.dp)) // 오늘 날짜에만 테두리
-            .padding(vertical = 4.dp, horizontal = 1.dp) // 셀 내부 상하좌우 최소 패딩
-            .height(95.dp), // 셀 높이 (이벤트 3줄 고려하여 약간 늘림, 이전 90dp)
-        verticalArrangement = Arrangement.Top // 내용물을 위로 정렬
+            .clip(RoundedCornerShape(0.dp))
+            .border(BorderStroke(cellBorderThickness, cellBorderColor), RoundedCornerShape(0.dp))
+            .padding(vertical = 4.dp, horizontal = 1.dp)
+            .fillMaxHeight(),
+        verticalArrangement = Arrangement.Top
     ) {
-        // 1. 요일(날짜) 형식으로 한 줄에 배치, 이 부분에만 배경색 적용
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(if (dateData.isToday) cellContentBackgroundColor else Color.Transparent, shape = RoundedCornerShape(4.dp)) // 오늘 날짜의 "요일(날짜)" 부분에만 배경색 및 약간 둥근 모서리
-                .padding(vertical = 5.dp), // 텍스트 상자의 상하 패딩
+                .background(if (dateData.isToday) cellContentBackgroundColor else Color.Transparent, shape = RoundedCornerShape(4.dp))
+                .padding(vertical = 5.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "${dateData.dayOfWeek}(${dateData.date})", // "일(14)" 형식
+                text = "${dateData.dayOfWeek}(${dateData.date})",
                 color = if (dateData.isToday) TextPrimary else dayColor,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Bold, // 요일 폰트 스타일 extralight
-                    fontSize = 14.sp
+                    fontWeight = FontWeight.Bold, // 요일 Bold
+                    fontSize = 12.sp
                 ),
                 textAlign = TextAlign.Center
             )
         }
-
-        Spacer(modifier = Modifier.height(4.dp)) // 날짜(요일)와 이벤트 내용 사이 간격
-
-        // 이벤트 내용 표시 (최대 3줄, 1줄 이상 넘는 내용은 잘림)
+        Spacer(modifier = Modifier.height(6.dp))
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f), // 남은 공간을 이벤트 표시에 사용
+                .weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.CenterVertically) // 이벤트 간 간격 및 수직 중앙 정렬
+            verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.CenterVertically)
         ) {
             if (dateData.events.isNotEmpty()) {
-                dateData.events.take(3).forEach { event -> // 최대 3개의 이벤트만 표시
+                dateData.events.take(3).forEach { event ->
                     Text(
                         text = event.description,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        maxLines = 1, // 내용도 1줄로 제한
-                        overflow = TextOverflow.Ellipsis, // 1줄 이상 넘는 글자는 잘림
-                        textAlign = TextAlign.Start,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp) // 각 이벤트 텍스트 좌우 패딩
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp)
                     )
                 }
             }
         }
     }
 }
-
-
-// --- WeeklyCalendarCardView 함수는 이전 답변과 동일하게 유지 ---
-// DayCellNew의 높이가 95dp로 변경되었으므로, Card의 Row 높이도 그에 맞게 조정 (예: 110.dp)
-@Composable
-fun WeeklyCalendarCardView(
-    weeklyCalendarData: List<WeeklyCalendarDay>,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(10.dp), // 4. 캘린더 외곽선 추가 및 둥글게
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
-        border = BorderStroke(1.dp, TextPrimary), // 4. 캘린더 외곽선
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(110.dp) // DayCellNew 높이(95dp) + 상하패딩(8dp*2) 고려하여 조절
-                .padding(horizontal = 2.dp, vertical = 8.dp),
-        ) {
-            weeklyCalendarData.forEachIndexed { index, dayData ->
-                DayCellNew(
-                    dateData = dayData,
-                    modifier = Modifier.weight(1f).fillMaxHeight()
-                )
-                if (index < weeklyCalendarData.size - 1) {
-                    VerticalDivider(
-                        color = TextPrimary.copy(alpha = 0.2f),
-                        thickness = 1.dp,
-                        modifier = Modifier.fillMaxHeight().width(1.dp).padding(vertical = 6.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-
-// ... (TodayQuestionHeaderWithAlert, TodayQuestionContentCard, RefreshQuestionButton, QuoteView 함수는 이전과 동일) ...
-// (RefreshQuestionButton의 가로 크기를 fillMaxWidth(0.45f) 정도로 다시 조정)
 
 @Composable
 fun TodayQuestionHeaderWithAlert(isAnsweredByAll: Boolean, modifier: Modifier = Modifier) {
@@ -375,7 +365,7 @@ fun TodayQuestionHeaderWithAlert(isAnsweredByAll: Boolean, modifier: Modifier = 
         Spacer(Modifier.weight(1f))
         if (!isAnsweredByAll) {
             Text(
-                text = "아직 오늘의 질문에 답변하지 않았어요!",
+                text = "아직 오늘의 질문에\n답변하지 않은 가족이 있어요!",
                 color = ErrorRed,
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, lineHeight = 12.sp),
                 textAlign = TextAlign.End
@@ -423,7 +413,7 @@ fun RefreshQuestionButton(
             disabledContentColor = ButtonDisabledText
         ),
         modifier = modifier
-            .fillMaxWidth(0.45f) // 4. 버튼 가로 크기 (이전 0.50f)
+            .fillMaxWidth(0.50f)
             .height(38.dp)
     ) {
         Text(
@@ -447,27 +437,32 @@ fun QuoteView(quote: String, modifier: Modifier = Modifier) {
     )
 }
 
-
 // --- Previews ---
-@Preview(showBackground = true, name = "홈 (답변 완료)", widthDp = 390, heightDp = 844)
+@Preview(showBackground = true, name = "홈 (주간 뷰)", widthDp = 390, heightDp = 844)
 @Composable
-fun DefaultHomeScreenPreview() {
+fun DefaultHomeScreenWeeklyPreview() {
     DaytogetherTheme {
-        val today = Calendar.getInstance().get(Calendar.DAY_OF_MONTH).toString()
+        val today = java.time.LocalDate.now()
         ActualHomeScreenContent(
-            upcomingAnniversaryText = "D-3 가족 기념일!오늘은 즐거운 하루!",
+            upcomingAnniversaryText = "D-3 가족 기념일!",
             dDayText = "D-3",
             dDayTitle = "엄마 생일",
-            currentYearMonth = "2025년 04월",
+            currentYearMonth = YearMonth.now(),
+            currentYearMonthFormatted = YearMonth.now().format(DateTimeFormatter.ofPattern("yyyy년 MM월", Locale.KOREAN)),
             weeklyCalendarData = listOf(
-                WeeklyCalendarDay("14", "일", isToday = "14" == today),
-                WeeklyCalendarDay("15", "월", events = listOf(CalendarEvent("회의"), CalendarEvent("미팅")), isToday = "15" == today),
-                WeeklyCalendarDay("16", "화", events = listOf(CalendarEvent("점심 약속")), isToday = "16" == today),
-                WeeklyCalendarDay("17", "수", events = listOf(CalendarEvent("저녁 약속"), CalendarEvent("영화 보기"), CalendarEvent("과제")), isToday = "17" == today),
-                WeeklyCalendarDay("18", "목", events = listOf(CalendarEvent("발표"), CalendarEvent("과제"), CalendarEvent("스터디"), CalendarEvent("저녁")), isToday = "18" == today),
-                WeeklyCalendarDay("19", "금", isToday = "19" == today),
-                WeeklyCalendarDay("20", "토", events = listOf(CalendarEvent("영화")), isToday = "20" == today)
+                WeeklyCalendarDay("14", "일", isToday = "14" == today.dayOfMonth.toString() && YearMonth.now().month == today.month && YearMonth.now().year == today.year),
+                WeeklyCalendarDay("15", "월", events = listOf(CalendarEvent("회의")), isToday = "15" == today.dayOfMonth.toString() && YearMonth.now().month == today.month && YearMonth.now().year == today.year),
+                WeeklyCalendarDay("16", "화", events = listOf(CalendarEvent("점심 약속"), CalendarEvent("추가 일정1"), CalendarEvent("추가 일정2")), isToday = "16" == today.dayOfMonth.toString() && YearMonth.now().month == today.month && YearMonth.now().year == today.year),
+                WeeklyCalendarDay("17", "수", isToday = "17" == today.dayOfMonth.toString() && YearMonth.now().month == today.month && YearMonth.now().year == today.year),
+                WeeklyCalendarDay("18", "목", events = listOf(CalendarEvent("발표")), isToday = "18" == today.dayOfMonth.toString() && YearMonth.now().month == today.month && YearMonth.now().year == today.year),
+                WeeklyCalendarDay("19", "금", isToday = "19" == today.dayOfMonth.toString() && YearMonth.now().month == today.month && YearMonth.now().year == today.year),
+                WeeklyCalendarDay("20", "토", events = listOf(CalendarEvent("영화 길게 써보기 테스트")), isToday = "20" == today.dayOfMonth.toString() && YearMonth.now().month == today.month && YearMonth.now().year == today.year)
             ),
+            isMonthlyView = false,
+            onToggleCalendarView = {},
+            onMonthChange = {},
+            monthlySelectedDate = null,
+            onMonthlyDateSelected = {},
             isQuestionAnsweredByAll = true,
             aiQuestion = "우리 가족만의 별명(애칭)이 있나요?",
             familyQuote = "\"가족은 삶의 큰 축복 중 하나이다.\" - 아이린 P. 라이언",
@@ -477,28 +472,25 @@ fun DefaultHomeScreenPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "홈 (답변 미완료)", widthDp = 390, heightDp = 844)
+@Preview(showBackground = true, name = "홈 (월간 뷰)", widthDp = 390, heightDp = 844)
 @Composable
-fun HomeScreenNotAnsweredPreview() {
+fun DefaultHomeScreenMonthlyPreview() {
     DaytogetherTheme {
-        val today = Calendar.getInstance().get(Calendar.DAY_OF_MONTH).toString()
         ActualHomeScreenContent(
-            upcomingAnniversaryText = "기념일 없음",
-            dDayText = "D-?",
-            dDayTitle = "기념일 없음",
-            currentYearMonth = "2025년 04월",
-            weeklyCalendarData = listOf(
-                WeeklyCalendarDay("14", "일", isToday = "14" == today),
-                WeeklyCalendarDay("15", "월", events = listOf(CalendarEvent("회의")), isToday = "15" == today),
-                WeeklyCalendarDay("16", "화", isToday = "16" == today),
-                WeeklyCalendarDay("17", "수", events = listOf(CalendarEvent("미팅"), CalendarEvent("추가 이벤트1"), CalendarEvent("추가 이벤트2")), isToday = "17" == today),
-                WeeklyCalendarDay("18", "목", isToday = "18" == today),
-                WeeklyCalendarDay("19", "금", events = listOf(CalendarEvent("영화 약속 길게길게")), isToday = "19" == today),
-                WeeklyCalendarDay("20", "토", isToday = "20" == today)
-            ),
-            isQuestionAnsweredByAll = false,
-            aiQuestion = "최근에 가장 기억에 남는 가족 행사는?",
-            familyQuote = "\"가장 중요한 것은 가족이다.\" - 월트 디즈니",
+            upcomingAnniversaryText = "D-3 가족 기념일!",
+            dDayText = "D-3",
+            dDayTitle = "엄마 생일",
+            currentYearMonth = YearMonth.of(2025, 5),
+            currentYearMonthFormatted = "2025년 05월",
+            weeklyCalendarData = emptyList(), // 월간 뷰에서는 주간 데이터 불필요
+            isMonthlyView = true,
+            onToggleCalendarView = {},
+            onMonthChange = {},
+            monthlySelectedDate = java.time.LocalDate.of(2025,5,12), // Preview용 예시 선택 날짜
+            onMonthlyDateSelected = {},
+            isQuestionAnsweredByAll = true,
+            aiQuestion = "가장 좋아하는 가족 여행지는?",
+            familyQuote = "\"다른 무엇보다도, 준비가 성공의 열쇠이다.\" - 알렉산더 그레이엄 벨",
             randomCloudResIds = listOf(R.drawable.cloud3),
             onRefreshQuestionClicked = {}
         )
