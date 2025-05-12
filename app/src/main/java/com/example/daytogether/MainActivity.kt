@@ -1,16 +1,18 @@
-package com.example.daytogether // 사용자님의 실제 패키지명
+package com.example.daytogether
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column // Divider를 Column으로 감싸기 위해 추가
 import androidx.compose.foundation.layout.padding
+import com.example.daytogether.ui.theme.TextPrimary // Divider 색상용으로 TextPrimary 사용 예시
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue // by navController.currentBackStackEntryAsState() 에 필요
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
-// Navigation Compose 관련 필수 임포트들
+import androidx.compose.ui.unit.dp // Divider 두께를 위해 추가
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -18,13 +20,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-// --- 여기까지 Navigation Compose 관련 필수 임포트 ---
 import com.example.daytogether.ui.home.HomeScreen
-import com.example.daytogether.ui.navigation.BottomNavItem // 사용자 정의 클래스
-import com.example.daytogether.ui.navigation.Routes      // 사용자 정의 객체
+import com.example.daytogether.ui.navigation.BottomNavItem
+import com.example.daytogether.ui.navigation.Routes
 import com.example.daytogether.ui.theme.DaytogetherTheme
 import com.example.daytogether.ui.theme.NavIconSelected
 import com.example.daytogether.ui.theme.NavIconUnselected
+import com.example.daytogether.ui.theme.TextPrimary // Divider 색상용
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -32,7 +34,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             DaytogetherTheme {
-                val navController = rememberNavController() // 여기!
+                val navController = rememberNavController()
                 val bottomNavItems = listOf(
                     BottomNavItem.Home,
                     BottomNavItem.Message,
@@ -42,42 +44,41 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(
                     bottomBar = {
-                        NavigationBar(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ) {
-                            val navBackStackEntry by navController.currentBackStackEntryAsState()
-                            val currentDestination = navBackStackEntry?.destination // 여기!
+                        Column {
+                            Divider(color = TextPrimary.copy(alpha = 0.3f), thickness = 1.dp) // 색상을 TextPrimary의 연한 버전으로
+                            NavigationBar(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ) {
+                                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                                val currentDestination = navBackStackEntry?.destination
 
-                            bottomNavItems.forEach { screen ->
-                                val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true // it, hierarchy
-                                NavigationBarItem(
-                                    icon = {
-                                        Icon(
-                                            imageVector = ImageVector.vectorResource(id = screen.iconResId),
-                                            contentDescription = screen.label,
-                                            tint = if (isSelected) NavIconSelected else NavIconUnselected
-                                        )
-                                    },
-                                    label = {
-                                        Text(
-                                            screen.label,
-                                            color = if (isSelected) NavIconSelected else NavIconUnselected
-                                        )
-                                    },
-                                    selected = isSelected,
-                                    onClick = {
-                                        navController.navigate(screen.route) { // navigation
-                                            popUpTo(navController.graph.findStartDestination().id) { // popUpTo, findStartDestination
-                                                saveState = true // saveState
+                                bottomNavItems.forEach { screen ->
+                                    val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                                    NavigationBarItem(
+                                        icon = {
+                                            Icon(
+                                                imageVector = ImageVector.vectorResource(id = screen.iconResId),
+                                                contentDescription = screen.label, // 접근성을 위해 contentDescription은 남겨둡니다.
+                                                tint = if (isSelected) NavIconSelected else NavIconUnselected
+                                            )
+                                        },
+                                        // label = { Text(...) }, // 글자 제외
+                                        selected = isSelected,
+                                        onClick = {
+                                            navController.navigate(screen.route) {
+                                                popUpTo(navController.graph.findStartDestination().id) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
                                             }
-                                            launchSingleTop = true // launchSingleTop
-                                            restoreState = true // restoreState
-                                        }
-                                    },
-                                    colors = NavigationBarItemDefaults.colors(
-                                        indicatorColor = MaterialTheme.colorScheme.surface
+                                        },
+                                        alwaysShowLabel = false, // 라벨을 항상 숨김 (아이콘만 표시)
+                                        colors = NavigationBarItemDefaults.colors(
+                                            indicatorColor = MaterialTheme.colorScheme.surface
+                                        )
                                     )
-                                )
+                                }
                             }
                         }
                     }
@@ -90,13 +91,13 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AppNavigationHost(navController: NavHostController, modifier: Modifier = Modifier) { // NavHostController
-    NavHost( // NavHost
+fun AppNavigationHost(navController: NavHostController, modifier: Modifier = Modifier) {
+    NavHost(
         navController = navController,
         startDestination = Routes.HOME,
         modifier = modifier
     ) {
-        composable(Routes.HOME) { HomeScreen() } // composable
+        composable(Routes.HOME) { HomeScreen() }
         composable(Routes.MESSAGE) { Text("메시지 화면입니다.") }
         composable(Routes.GALLERY) { Text("갤러리 화면입니다.") }
         composable(Routes.SETTINGS) { Text("설정 화면입니다.") }
