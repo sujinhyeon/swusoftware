@@ -199,24 +199,39 @@ fun HomeScreen() {
     val onSaveNewEventLambda: () -> Unit = {
         editingEventState?.let { (date, eventToEdit) ->
             if (newEventDescriptionState.isNotBlank()) {
-                val currentEvents = eventsByDateState[date]?.toMutableList() ?: mutableListOf()
-                if (eventToEdit != null) {
-                    val index = currentEvents.indexOfFirst { it.id == eventToEdit.id }
-                    if (index != -1) {
-                        currentEvents[index] = eventToEdit.copy(description = newEventDescriptionState)
-                    } else {
-                        currentEvents.add(CalendarEvent(id = eventToEdit.id, description = newEventDescriptionState))
+                // 항상 기존 리스트를 복사하여 새 리스트를 기반으로 작업 시작
+                val currentEvents = eventsByDateState[date]?.toList() ?: emptyList()
+                val newEventList: List<CalendarEvent>
+
+                if (eventToEdit != null) { // 수정 모드
+                    var eventUpdated = false
+                    newEventList = currentEvents.map { existingEvent ->
+                        if (existingEvent.id == eventToEdit.id) {
+                            eventUpdated = true
+                            existingEvent.copy(description = newEventDescriptionState)
+                        } else {
+                            existingEvent
+                        }
                     }
-                } else {
-                    currentEvents.add(CalendarEvent(description = newEventDescriptionState))
+                    // 만약 ID가 같은 이벤트가 없어서 업데이트가 안 되었다면, 새 이벤트로 추가 (선택적 로직)
+                    // 이 경우는 보통 eventToEdit.id가 잘못되었거나 데이터 동기화 문제일 수 있음
+                    if (!eventUpdated) {
+                        // 기존 ID를 사용하거나, 새 ID를 생성하여 추가할 수 있음
+                        // 여기서는 기존 ID를 사용한다고 가정
+                        // newEventList = newEventList + CalendarEvent(id = eventToEdit.id, description = newEventDescriptionState)
+                    }
+                } else { // 추가 모드
+                    // 새 이벤트 추가 시 ID는 CalendarEvent 내부에서 UUID.randomUUID().toString() 등으로 자동 생성되도록 가정
+                    newEventList = currentEvents + CalendarEvent(description = newEventDescriptionState)
                 }
-                eventsByDateState[date] = currentEvents.toList()
+                eventsByDateState[date] = newEventList // ★★★ 새로운 리스트 인스턴스로 교체 ★★★
             }
         }
         showAddEventInputViewFlag = false
         newEventDescriptionState = ""
         editingEventState = null
     }
+
 
     val onCancelNewEventInputLambda: () -> Unit = {
         showAddEventInputViewFlag = false
@@ -224,21 +239,21 @@ fun HomeScreen() {
         editingEventState = null
     }
 
-    // ***** 여기가 수정된 부분입니다 *****
-    val onDeleteEventRequestInHomeScreenLambda: (LocalDate, CalendarEvent) -> Unit = { date, event ->
+
+    val onDeleteEventRequestInHomeScreenLambda: (LocalDate, CalendarEvent) -> Unit = { date, eventToDelete ->
         eventsByDateState[date]?.let { currentEventsList ->
-            val updatedEvents = currentEventsList.filterNot { it.id == event.id }
+            val updatedEvents = currentEventsList.filterNot { it.id == eventToDelete.id }
             if (updatedEvents.isEmpty()) {
-                eventsByDateState.remove(date)
-                if (selectedDateForDetails == date) {
-                    selectedDateForDetails = null
-                    dateForBorderOnly = null
-                }
+                eventsByDateState.remove(date) // ★★★ 키 자체를 제거 (recomposition 유발) ★★★
             } else {
-                eventsByDateState[date] = updatedEvents.toList() // toList()로 불변성 및 recomposition 유도
+                eventsByDateState[date] = updatedEvents // ★★★ filterNot은 이미 새 리스트를 반환 ★★★
             }
         }
-        // 이 람다는 Unit 타입을 반환하도록 명시되었습니다.
+        // 상세 팝업이 삭제된 이벤트가 포함된 날짜를 보고 있었다면, 해당 팝업을 닫거나 UI를 업데이트
+        if (eventsByDateState[date].isNullOrEmpty() && selectedDateForDetails == date) {
+            selectedDateForDetails = null
+            dateForBorderOnly = null // 관련 상태도 초기화
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {

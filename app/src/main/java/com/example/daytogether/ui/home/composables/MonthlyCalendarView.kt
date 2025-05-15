@@ -172,7 +172,8 @@ fun MonthlyCalendarView(
 ) {
     val today = LocalDate.now()
     // currentMonth나 eventsByDate가 변경될 때만 daysInGrid를 다시 계산
-    val daysInGrid: List<MonthlyCalendarCellData?> = remember(currentMonth, eventsByDate) {
+    val daysInGrid: List<MonthlyCalendarCellData?> = remember(currentMonth, eventsByDate.toMap()) {
+        println("Recalculating daysInGrid for $currentMonth")
         getDaysForMonthlyCalendarGrid(currentMonth, eventsByDate)
     }
 
