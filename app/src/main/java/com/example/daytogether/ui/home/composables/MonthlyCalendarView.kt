@@ -44,7 +44,7 @@ import androidx.compose.runtime.remember
 
 
 @Composable
-internal fun MonthlyCalendarHeader( // 가시성을 internal 또는 public으로 (HomeScreen에서 직접 호출하지 않으므로 private 유지 가능)
+internal fun MonthlyCalendarHeader(
     currentMonth: YearMonth,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
@@ -117,22 +117,32 @@ private fun getDaysForMonthlyCalendarGrid(
     yearMonth: YearMonth,
     allEvents: Map<LocalDate, List<CalendarEvent>>
 ): List<MonthlyCalendarCellData?> {
-    val firstDayOfMonth = yearMonth.atDay(1)
+    val firstDayOfMonth = yearMonth.atDay(1) // 해당 달의 1일
     val daysInMonth = yearMonth.lengthOfMonth()
 
-    // 주의 시작을 월요일로 가정 (JavaDayOfWeek.MONDAY.value == 1)
-    // firstDayOfMonth.dayOfWeek.value는 월요일(1) ~ 일요일(7)을 반환
-    // 그리드에서 월요일을 0번째 인덱스로 하기 위한 조정값
-    val daysToPrepend = (firstDayOfMonth.dayOfWeek.value - JavaDayOfWeek.MONDAY.value).let { if (it < 0) it + 7 else it }
+    // --- "일요일 시작" 기준으로 daysToPrepend 계산 ---
+    // JavaDayOfWeek enum: MONDAY(1), TUESDAY(2), ..., SATURDAY(6), SUNDAY(7)
+    // 우리 그리드의 첫 번째 열은 일요일 (인덱스 0)입니다.
+    // firstDayOfMonth.dayOfWeek.value가 SUNDAY(7)이면, daysToPrepend는 0이 되어야 합니다.
+    // firstDayOfMonth.dayOfWeek.value가 MONDAY(1)이면, daysToPrepend는 1이 되어야 합니다 (일요일 칸 1개 채움).
+    // ...
+    // firstDayOfMonth.dayOfWeek.value가 SATURDAY(6)이면, daysToPrepend는 6이 되어야 합니다.
+    // 즉, (요일값 % 7)을 사용합니다. (일요일 7 % 7 = 0, 월요일 1 % 7 = 1, ..., 토요일 6 % 7 = 6)
+    val daysToPrepend = firstDayOfMonth.dayOfWeek.value % 7
+    // --- 계산 수정 완료 ---
 
     val calendarDays = mutableListOf<MonthlyCalendarCellData?>()
 
     // 이전 달의 날짜들 추가
-    val prevMonth = yearMonth.minusMonths(1)
-    val daysInPrevMonth = prevMonth.lengthOfMonth()
-    for (i in 0 until daysToPrepend) {
-        val date = prevMonth.atDay(daysInPrevMonth - daysToPrepend + 1 + i)
-        calendarDays.add(MonthlyCalendarCellData(date, false, allEvents[date] ?: emptyList()))
+    if (daysToPrepend > 0) { // 1일이 일요일이라 앞에 채울 날짜가 없는 경우(daysToPrepend == 0)는 이 루프를 실행하지 않음.
+        val prevMonth = yearMonth.minusMonths(1)
+        val daysInPrevMonth = prevMonth.lengthOfMonth()
+        for (i in 0 until daysToPrepend) {
+            // 이전 달의 마지막 날부터 거꾸로 채우는 것이 아니라,
+            // 이전 달의 (마지막 날 - daysToPrepend + 1 + i) 번째 날짜를 가져옵니다.
+            val date = prevMonth.atDay(daysInPrevMonth - daysToPrepend + 1 + i)
+            calendarDays.add(MonthlyCalendarCellData(date, false, allEvents[date] ?: emptyList()))
+        }
     }
 
     // 현재 달의 날짜들 추가
@@ -141,7 +151,7 @@ private fun getDaysForMonthlyCalendarGrid(
         calendarDays.add(MonthlyCalendarCellData(date, true, allEvents[date] ?: emptyList()))
     }
 
-    // 다음 달의 날짜들 추가 (총 5주 = 35칸을 채우도록)
+    // 다음 달의 날짜들 추가 (사용자님 요청대로 35칸 고정)
     val totalCellsToDisplay = 35
     val currentCellCount = calendarDays.size
     if (currentCellCount < totalCellsToDisplay) {
@@ -151,7 +161,10 @@ private fun getDaysForMonthlyCalendarGrid(
             calendarDays.add(MonthlyCalendarCellData(date, false, allEvents[date] ?: emptyList()))
         }
     }
-    return calendarDays // 이미 35칸으로 채워졌거나, 그보다 적으면 해당 리스트 반환
+    // 만약 정확히 35칸을 보장하고 싶다면, 마지막에 take(totalCellsToDisplay)를 할 수 있지만,
+    // 위 로직은 이미 35칸을 목표로 채우므로 초과하거나 부족한 경우는 거의 없습니다.
+    // 하지만 안전하게 하려면 return calendarDays.take(totalCellsToDisplay)
+    return calendarDays
 }
 
 @OptIn(ExperimentalMaterial3Api::class) // MonthlyCalendarView에 필요할 수 있음
@@ -292,18 +305,18 @@ private fun MonthlyCalendarHeader(
 
 
 @Composable
-private fun DayOfWeekHeaderMonthly(modifier: Modifier = Modifier) { // modifier 파라미터 추가
+private fun DayOfWeekHeaderMonthly(modifier: Modifier = Modifier) {
     Row(
-        modifier = modifier // 전달받은 modifier 사용 (fillMaxWidth)
-            .padding(horizontal = 16.dp) // << LazyVerticalGrid와 동일한 수평 패딩 적용
-            .padding(vertical = 4.dp),
-        // horizontalArrangement = Arrangement.SpaceAround // weight(1f)를 사용하므로 불필요하거나 Start로 변경
-        horizontalArrangement = Arrangement.Start // 또는 Arrangement.Center로 각 텍스트를 중앙 정렬
+        modifier = modifier
+            .padding(horizontal = 16.dp) // 전체 헤더의 좌우 패딩
+            .padding(vertical = 4.dp),    // 전체 헤더의 상하 패딩
+        horizontalArrangement = Arrangement.SpaceAround // 각 요일 Text를 균등하게 배치 (weight(1f)와 함께 사용 시 효과)
+        // 또는 Arrangement.Start를 사용해도 weight 때문에 동일 효과
     ) {
         listOf("일", "월", "화", "수", "목", "금", "토").forEach { day ->
             Text(
                 text = day,
-                textAlign = TextAlign.Start, // 각 Text 내부에서 중앙 정렬
+                textAlign = TextAlign.Center, // <<< 요일 텍스트는 각 셀 내에서 가운데 정렬
                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                 color = TextPrimary,
                 modifier = Modifier.weight(1f) // 각 요일이 동일한 너비를 차지
@@ -317,106 +330,106 @@ private fun MonthlyDayCell(
     date: LocalDate?,
     isCurrentMonth: Boolean,
     isToday: Boolean,
-    showPopupHighlight: Boolean,      // 이름 변경: isSelected -> showPopupHighlight
-    showBorderOnlyHighlight: Boolean, // 새로 추가된 파라미터
+    showPopupHighlight: Boolean,
+    showBorderOnlyHighlight: Boolean,
     events: List<CalendarEvent>,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier // LazyVerticalGrid의 각 셀에 의해 채워짐
+    modifier: Modifier = Modifier
 ) {
-    val cellHeight = 90.dp // 셀 높이
-    val textColor = if (!isCurrentMonth) OtherMonthDayText else TextPrimary // 다른 달 날짜 색상
+    val cellHeight = 90.dp
+    val textColor = if (!isCurrentMonth) OtherMonthDayText else TextPrimary
 
-    // 상태에 따라 테두리와 배경색 결정 (이전 답변의 로직 사용)
     val actualBorderColor: Color
     val actualBorderWidth: Dp
     val actualBackgroundColor: Color
 
     if (showBorderOnlyHighlight) {
-        // 경우 1: '테두리만 표시' 상태 (오늘 날짜 첫 클릭 또는 헤더 '오늘' 버튼 클릭 후)
-        actualBorderColor = SelectedMonthlyBorder // 테두리 색 (Color.kt에 정의 가정)
-        actualBorderWidth = 1.5.dp               // 테두리 두께
-        actualBackgroundColor = if (isToday && isCurrentMonth) TodayMonthlyBackground else Color.Transparent
-    } else if (showPopupHighlight) {
-        // 경우 2: 팝업을 위해 날짜가 선택된 상태
         actualBorderColor = SelectedMonthlyBorder
         actualBorderWidth = 1.5.dp
-        actualBackgroundColor = SelectedMonthlyBorder.copy(alpha = 0.2f) // 팝업 선택 시 배경색
+        actualBackgroundColor = if (isToday && isCurrentMonth) TodayMonthlyBackground else Color.Transparent
+    } else if (showPopupHighlight) {
+        actualBorderColor = SelectedMonthlyBorder
+        actualBorderWidth = 1.5.dp
+        actualBackgroundColor = SelectedMonthlyBorder.copy(alpha = 0.2f)
     } else {
-        // 경우 3: 아무것도 선택되지 않은 일반 날짜
         actualBorderColor = Color.Transparent
         actualBorderWidth = 0.dp
         actualBackgroundColor = if (isToday && isCurrentMonth) TodayMonthlyBackground else Color.Transparent
     }
 
     Box(
-        modifier = modifier // LazyVerticalGrid에 의해 크기가 결정됨 (1/7 너비)
+        modifier = modifier
             .height(cellHeight)
-            .clip(RoundedCornerShape(4.dp)) // 셀 모양
-            .background(actualBackgroundColor) // 결정된 배경색 적용
-            .border(BorderStroke(actualBorderWidth, actualBorderColor), RoundedCornerShape(4.dp)) // 결정된 테두리 적용
-            .clickable(enabled = date != null && isCurrentMonth) { onClick() } // 현재 달만 클릭 가능
-            .padding(horizontal = 3.dp, vertical = 4.dp), // 셀 내부 패딩
-        contentAlignment = Alignment.TopCenter // 내용물 정렬
+            .clip(RoundedCornerShape(4.dp))
+            .background(actualBackgroundColor)
+            .border(BorderStroke(actualBorderWidth, actualBorderColor), RoundedCornerShape(4.dp))
+            .clickable(enabled = date != null && isCurrentMonth) { onClick() }
+            .padding(horizontal = 3.dp, vertical = 4.dp), // 셀 내부의 전체적인 패딩
+        contentAlignment = Alignment.TopStart // 내부 Column을 위쪽-시작점에 배치
     ) {
         if (date != null) {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxHeight() // 내부 Column이 Box 높이 채우도록
+                // horizontalAlignment = Alignment.CenterHorizontally, // Column 전체 정렬 불필요
+                modifier = Modifier.fillMaxHeight()
             ) {
-                // 날짜 숫자 표시
+                // 날짜 숫자와 "+n"을 담는 Row
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically // 날짜와 +N 표시 수직 정렬
+                    modifier = Modifier.fillMaxWidth(), // Row는 셀의 전체 너비를 사용
+                    verticalAlignment = Alignment.CenterVertically, // 날짜와 +n 수직 중앙 정렬
+                    horizontalArrangement = Arrangement.SpaceBetween // <<< 날짜는 왼쪽에, +n은 오른쪽에 배치
                 ) {
+                    // 날짜 숫자 Text
                     Text(
                         text = date.dayOfMonth.toString(),
-                        textAlign = TextAlign.Start,
+                        textAlign = TextAlign.Start, // <<< 날짜 숫자는 텍스트 박스 내에서 왼쪽 정렬
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = if (isToday && isCurrentMonth) FontWeight.ExtraBold else FontWeight.Normal,
                             fontSize = 12.sp
                         ),
                         color = if (isToday && isCurrentMonth) TextPrimary else textColor,
-                        modifier = Modifier.weight(1f) // 날짜 텍스트가 공간 차지
+                        modifier = Modifier // weight(1f) 제거하여 내용만큼만 공간 차지
                     )
-                    // 이벤트가 3개 초과 시 +N 표시
+
+                    // "+n" (추가 이벤트 개수) Text
                     if (isCurrentMonth && events.size > 3) {
                         Text(
                             text = "+${events.size - 3}",
-                            color = MaterialTheme.colorScheme.primary, // 테마 색상 사용
+                            color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 8.sp),
-                            textAlign = TextAlign.End // 오른쪽 정렬
+                            textAlign = TextAlign.End, // <<< "+n" 텍스트는 텍스트 박스 내에서 오른쪽 정렬
+                            modifier = Modifier // weight(1f) 제거하여 내용만큼만 공간 차지
                         )
                     }
+                    // "+n"이 없을 경우, SpaceBetween에 의해 날짜는 자동으로 왼쪽에 위치함
                 }
 
-                // 이벤트 목록 표시 (최대 3개)
+                // 이벤트 목록 표시 Column (이전과 동일한 정렬 유지 - 왼쪽 정렬)
                 if (isCurrentMonth) {
                     Column(
                         modifier = Modifier
                             .weight(1f) // 남은 공간 차지
                             .fillMaxWidth()
-                            .padding(top = 2.dp), // 날짜 숫자와 이벤트 목록 사이 간격
+                            .padding(top = 2.dp),
                         horizontalAlignment = Alignment.Start, // 이벤트 텍스트 왼쪽 정렬
-                        verticalArrangement = Arrangement.spacedBy(1.dp) // 이벤트 간 수직 간격
+                        verticalArrangement = Arrangement.spacedBy(1.dp)
                     ) {
                         events.take(3).forEach { event ->
                             Text(
                                 text = event.description,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f), // 이벤트 텍스트 색상
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), // 이벤트 폰트 크기
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Start, // 이벤트 텍스트 왼쪽 정렬
+                                textAlign = TextAlign.Start, // 이벤트도 왼쪽 정렬
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f), RoundedCornerShape(2.dp)) // 이벤트 배경
-                                    .padding(horizontal = 2.dp, vertical = 0.5.dp) // 이벤트 내부 패딩
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f), RoundedCornerShape(2.dp))
+                                    .padding(horizontal = 2.dp, vertical = 0.5.dp)
                             )
                         }
                     }
                 } else {
-                    // 현재 달이 아니면 이벤트 공간은 비워둠
-                    Spacer(Modifier.weight(1f))
+                    Spacer(Modifier.weight(1f)) // 현재 달이 아니면 이벤트 공간 비움
                 }
             }
         }
