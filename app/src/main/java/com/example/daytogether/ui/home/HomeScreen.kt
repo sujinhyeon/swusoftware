@@ -278,24 +278,34 @@ fun HomeScreen() {
                 selectedDateForDetails = null
                 dateForBorderOnly = null
             },
-            onDateClick = { clickedDate ->
+            onDateClick = { clickedDate -> // 사용자가 날짜 '셀'을 클릭했을 때
                 if (clickedDate == null) {
                     selectedDateForDetails = null
-                    dateForBorderOnly = null
+                    dateForBorderOnly = null // 모든 선택 상태 초기화
                     return@ActualHomeScreenContent
                 }
-                if (clickedDate.isEqual(today)) {
-                    if (dateForBorderOnly?.isEqual(today) == true) {
-                        selectedDateForDetails = today
-                        dateForBorderOnly = null
-                    } else {
-                        selectedDateForDetails = null
-                        dateForBorderOnly = today
-                    }
+
+                val today = LocalDate.now() // 오늘 날짜 확인
+
+                if (dateForBorderOnly?.isEqual(today) == true && clickedDate.isEqual(today)) {
+                    // 경우 1: '헤더의 오늘 버튼'을 눌러서 오늘 날짜에 테두리만 있는 상태였는데,
+                    //         그 오늘 날짜 셀을 사용자가 클릭한 경우 (즉, '오늘' 시나리오의 두 번째 액션)
+                    selectedDateForDetails = today // 팝업을 보여준다.
+                    dateForBorderOnly = null       // '테두리만 표시' 상태는 해제한다.
                 } else {
-                    selectedDateForDetails = clickedDate
-                    dateForBorderOnly = null
+                    // 경우 2: 그 외 모든 경우 (오늘 날짜 셀 직접 첫 클릭, 다른 날짜 클릭)
+                    // dateForBorderOnly 상태가 오늘이 아니거나, 클릭된 날짜가 오늘이 아니거나,
+                    // 또는 오늘이지만 dateForBorderOnly가 설정되지 않은 경우.
+                    selectedDateForDetails = clickedDate // 클릭된 날짜에 대해 바로 팝업을 보여준다.
+                    dateForBorderOnly = null             // '테두리만 표시' 상태는 없앤다 (다른 날짜를 클릭했거나, 오늘을 직접 클릭하여 팝업을 띄웠으므로).
                 }
+            },
+
+            onMonthlyTodayButtonClick = { // 캘린더 헤더의 '오늘' 문구(버튼)를 클릭했을 때
+                val now = LocalDate.now()
+                currentYearMonth = YearMonth.from(now) // 달력을 현재 달로 이동
+                selectedDateForDetails = null          // 팝업은 보여주지 말고
+                dateForBorderOnly = now                // 오늘 날짜에 '테두리만 표시' 상태로 만들자
             },
             onToggleCalendarView = {
                 isMonthlyView = !isMonthlyView
@@ -312,13 +322,7 @@ fun HomeScreen() {
                 aiQuestionState = "새로운 AI 질문을 로딩하고 있습니다..."
                 isQuestionAnsweredByAllState = false
             },
-            onMonthlyTodayButtonClick = {
-                val now = LocalDate.now()
-                currentYearMonth = YearMonth.from(now)
-                selectedDateForDetails = null
-                dateForBorderOnly = now
-                if (!isMonthlyView) isMonthlyView = true
-            },
+
             onEditEventRequest = { date, event -> commonEditEventLogic(date, event) },
             onDeleteEventRequest = onDeleteEventRequestInHomeScreenLambda, // 타입이 명시된 람다 전달
             dateForBorderOnly = dateForBorderOnly
