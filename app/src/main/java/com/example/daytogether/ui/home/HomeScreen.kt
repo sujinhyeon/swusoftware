@@ -3,6 +3,7 @@ package com.example.daytogether.ui.home
 
 
 // --- 기본 Compose 및 UI 관련 Imports ---
+import com.example.daytogether.ui.home.composables.WeeklyCalendarView
 import com.example.daytogether.ui.home.composables.AnniversaryBoard
 import com.example.daytogether.ui.home.composables.EventDetailsDialog
 import androidx.compose.animation.AnimatedVisibility
@@ -1014,87 +1015,29 @@ fun ActualHomeScreenContent(
 
                 }
 
-
-
+                // --- 캘린더 본체 부분 (월간 또는 주간 캘린더 중 하나만 선택) ---
                 if (isMonthlyView) {
-
                     MonthlyCalendarView(
-
                         currentMonth = currentYearMonth,
-
                         onMonthChange = onMonthChange,
-
                         onDateClick = onDateClick,
-
                         eventsByDate = eventsByDate,
-
                         selectedDateForDetails = selectedDateForDetails,
-
                         modifier = Modifier.fillMaxWidth(),
-
-                        onEditEventRequest = onEditEventRequest, // 전달
-
-                        onDeleteEventRequest = onDeleteEventRequest, // 전달
-
-                        onTitleClick = onMonthlyCalendarHeaderTitleClick, // 월간 헤더 년월 텍스트 클릭
-
-                        onCalendarIconClick = onMonthlyCalendarHeaderIconClick, // 월간 헤더 달력 아이콘 클릭
-
-                        onTodayHeaderButtonClick = onMonthlyTodayButtonClick // 월간 헤더 "오늘" 버튼 클릭 전달
-
+                        onEditEventRequest = onEditEventRequest,
+                        onDeleteEventRequest = onDeleteEventRequest,
+                        onTitleClick = onMonthlyCalendarHeaderTitleClick, // 월간 헤더 클릭 시 주간으로
+                        onCalendarIconClick = onMonthlyCalendarHeaderIconClick,
+                        onTodayHeaderButtonClick = onMonthlyTodayButtonClick
                     )
-
-                } else { // 주간 뷰
-
-                    Box(
-
-                        modifier = Modifier
-
-                            .fillMaxWidth()
-
-                            .background(weeklyCalendarBackgroundColor, RoundedCornerShape(12.dp))
-
-                            .padding(horizontal = 1.dp, vertical = 1.dp)
-
-                    ) {
-
-                        Row(
-
-                            modifier = Modifier.fillMaxWidth().height(120.dp),
-
-                            ) {
-
-                            weeklyCalendarData.forEachIndexed { index, dayData ->
-
-                                DayCellNew(
-
-                                    dateData = dayData,
-
-                                    modifier = Modifier.weight(1f).fillMaxHeight()
-
-                                )
-
-                                if (index < weeklyCalendarData.size - 1) {
-
-                                    VerticalDivider(
-
-                                        color = TextPrimary.copy(alpha = 0.15f),
-
-                                        thickness = 1.dp,
-
-                                        modifier = Modifier.fillMaxHeight().padding(vertical = 6.dp)
-
-                                    )
-
-                                }
-
-                            }
-
-                        }
-
-                    }
-
+                } else { // 주간 뷰 상태일 때 (!isMonthlyView == true)
+                    // ▼▼▼▼▼ 여기에 WeeklyCalendarView 호출이 들어가야 합니다 ▼▼▼▼▼
+                    WeeklyCalendarView(
+                        weeklyCalendarData = weeklyCalendarData,
+                        modifier = Modifier.fillMaxWidth() // 또는 필요한 다른 Modifier
+                    )
                 }
+
 
                 Spacer(modifier = Modifier.height(24.dp))
 
