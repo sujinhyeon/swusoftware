@@ -24,8 +24,8 @@ fun TodayQuestionContentCard(questionText: String, modifier: Modifier = Modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = 90.dp)
             .clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.3f))
-            .border(BorderStroke(1.dp, TextPrimary.copy(alpha = 0.7f)), RoundedCornerShape(10.dp)),
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.1f))
+            .border(BorderStroke(1.dp, TextPrimary.copy(alpha = 0.5f)), RoundedCornerShape(10.dp)),
         contentAlignment = Alignment.Center
     ) {
         Text(

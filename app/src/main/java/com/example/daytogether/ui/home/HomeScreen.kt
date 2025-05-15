@@ -323,14 +323,33 @@ fun HomeScreen() {
 @Composable
 fun DefaultHomeScreenWeeklyPreview() {
     DaytogetherTheme {
-        val today = LocalDate.now()
+        val today = LocalDate.now() // 현재 날짜 (2025년 5월 15일 목요일)
+
+        // 4개의 이벤트를 포함할 샘플 이벤트 리스트
+        val fourEventsSample = listOf(
+            CalendarEvent(description = "이벤트 1: 아침 회의"),
+            CalendarEvent(description = "이벤트 2: 점심 약속"),
+            CalendarEvent(description = "이벤트 3: 프로젝트 작업"),
+            CalendarEvent(description = "이벤트 4: 저녁 운동")
+        )
+
         val previewWeeklyData = (0..6).map { dayOffset ->
-            val date = today.with(JavaDayOfWeek.MONDAY).plusDays(dayOffset.toLong())
+            val date = today.with(JavaDayOfWeek.MONDAY).plusDays(dayOffset.toLong()) // 이번 주 월요일부터 시작
+
+            // 첫 번째 날짜(월요일, dayOffset == 0)에만 4개의 이벤트를 넣고,
+            // 세 번째 날짜(수요일, dayOffset == 2)에는 1개의 이벤트를 넣어 비교
+            // 다른 날들은 기존 로직 유지 또는 빈 이벤트로 설정
+            val eventsForThisDay = when (dayOffset) {
+                0 -> fourEventsSample // 월요일에 4개 이벤트
+                2 -> listOf(CalendarEvent(description = "수요 주간이벤트")) // 수요일에 1개 이벤트
+                else -> emptyList() // 나머지 요일은 이벤트 없음 (또는 기존 로직: if(dayOffset % 2 == 0) ...)
+            }
+
             WeeklyCalendarDay(
                 date = date.dayOfMonth.toString(),
                 dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.KOREAN),
                 isToday = date.isEqual(today),
-                events = if(dayOffset % 2 == 0) listOf(CalendarEvent(description = "주간이벤트")) else emptyList()
+                events = eventsForThisDay // 수정된 이벤트 리스트 사용
             )
         }
         ActualHomeScreenContent(
@@ -342,9 +361,12 @@ fun DefaultHomeScreenWeeklyPreview() {
             currentYearMonthFormatted = YearMonth.now().format(DateTimeFormatter.ofPattern("yyyy년 MM월", Locale.KOREAN)),
             isMonthlyView = false,
             selectedDateForDetails = null,
+            // eventsByDate는 주간 뷰에서는 직접 사용되지 않고 weeklyCalendarData를 통해 전달됩니다.
+            // 필요하다면 이 부분도 weeklyCalendarData와 일관성 있게 맞출 수 있지만,
+            // WeeklyCalendarView는 weeklyCalendarData.events를 직접 사용하므로 이 부분 수정은 필수는 아닙니다.
             eventsByDate = mapOf(
-                today.plusDays(1) to listOf(CalendarEvent(description = "미리보기 주간 이벤트 1")),
-                today.plusDays(3) to listOf(CalendarEvent(description = "미리보기 주간 이벤트 2"))
+                today.with(JavaDayOfWeek.MONDAY) to fourEventsSample, // 월요일 이벤트
+                today.with(JavaDayOfWeek.MONDAY).plusDays(2) to listOf(CalendarEvent(description = "수요 주간이벤트")) // 수요일 이벤트
             ),
             weeklyCalendarData = previewWeeklyData,
             isQuestionAnsweredByAll = false,
@@ -364,6 +386,7 @@ fun DefaultHomeScreenWeeklyPreview() {
         )
     }
 }
+
 
 @Preview(showBackground = true, name = "홈 (월간 뷰)", widthDp = 390, heightDp = 844)
 @Composable

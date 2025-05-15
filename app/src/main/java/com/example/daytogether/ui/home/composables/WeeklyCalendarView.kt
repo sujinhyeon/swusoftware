@@ -14,16 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-// ▼▼▼▼▼ 수정된 모델 import 경로 ▼▼▼▼▼
-import com.example.daytogether.data.model.WeeklyCalendarDay // << 수정된 경로!
-// 만약 CalendarEvent도 이 파일에서 직접 참조한다면, 경로 수정 필요
-// import com.example.daytogether.data.model.CalendarEvent
-// ▲▲▲▲▲ 수정된 모델 import 경로 ▲▲▲▲▲
+import com.example.daytogether.data.model.WeeklyCalendarDay
 import com.example.daytogether.ui.theme.TextPrimary
-// DayCellNew import 문 (경로 확인)
-// import com.example.daytogether.ui.home.composables.DayCellNew
 
-// 테두리 색상 정의 (사용자님이 알려주신 값)
 val WeeklyCalendarBorderColor = Color(0xFF533A28)
 
 @Composable
@@ -36,9 +29,10 @@ fun WeeklyCalendarView(
     Box(
         modifier = modifier
             .border( // 테두리 적용
-                width = 1.dp,
+                width = 0.5.dp,
                 color = WeeklyCalendarBorderColor,
                 shape = weeklyCalendarShape
+
             )
         // 배경색 없음, 내부 패딩 없음 (날짜 셀이 테두리에 바로 붙도록)
     ) {
