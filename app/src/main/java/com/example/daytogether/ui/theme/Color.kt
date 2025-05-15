@@ -34,3 +34,6 @@ val Pink40 = Color(0xFF7D5260)
 val TodayMonthlyBackground = AnniversaryBoardBackground.copy(alpha = 0.2f) // 이전 0.5f 또는 직접 지정한 값에서 변경
 val SelectedMonthlyBorder = Color(0xFF533A28)
 val OtherMonthDayText = Color(0xFFBFBFBF)
+
+val Brown100 = AnniversaryBoardBackground.copy(alpha = 0.1f)
+

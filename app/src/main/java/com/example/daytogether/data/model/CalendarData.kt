@@ -1,8 +1,5 @@
-package com.example.daytogether.data.model // 사용자님의 실제 패키지명
+package com.example.daytogether.data.model
 
-data class CalendarEvent(
-    val description: String // 이벤트 설명 (예: "회의", "점심 약속")
-)
 
 data class WeeklyCalendarDay(
     val date: String, // 날짜 (예: "14")
