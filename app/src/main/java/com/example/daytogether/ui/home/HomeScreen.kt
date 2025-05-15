@@ -3,6 +3,7 @@ package com.example.daytogether.ui.home
 
 
 // --- 기본 Compose 및 UI 관련 Imports ---
+import com.example.daytogether.ui.home.composables.AnniversaryBoard
 import com.example.daytogether.ui.home.composables.EventDetailsDialog
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -1207,49 +1208,7 @@ fun ActualHomeScreenContent(
 
 
 
-@OptIn(ExperimentalFoundationApi::class)
 
-@Composable
-
-fun AnniversaryBoard(text: String, modifier: Modifier = Modifier) {
-
-    val isPreview = LocalInspectionMode.current // Preview 모드인지 확인
-
-
-
-    Text(
-
-        text = text,
-
-        modifier = modifier
-
-            .fillMaxWidth()
-
-            .background(AnniversaryBoardBackground)
-
-            .padding(vertical = 10.dp)
-
-            .basicMarquee(
-
-// Preview 중일 때는 반복 횟수를 5로 제한, 실제 앱에서는 무한 반복
-
-                iterations = if (isPreview) 5 else Int.MAX_VALUE
-
-            ),
-
-        textAlign = TextAlign.Center,
-
-        style = MaterialTheme.typography.bodyMedium.copy(
-
-            fontWeight = FontWeight.Bold,
-
-            color = TextPrimary
-
-        )
-
-    )
-
-}
 
 @Composable
 
