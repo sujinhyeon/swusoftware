@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.daytogether.ui.theme.TextPrimary
@@ -153,24 +154,25 @@ private fun getDaysForMonthlyCalendarGrid(
     return calendarDays // 이미 35칸으로 채워졌거나, 그보다 적으면 해당 리스트 반환
 }
 
-// monthlycalendarview.kt - MonthlyCalendarView 함수
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class) // MonthlyCalendarView에 필요할 수 있음
 @Composable
 fun MonthlyCalendarView(
     currentMonth: YearMonth,
     onMonthChange: (YearMonth) -> Unit,
-    onDateClick: (LocalDate?) -> Unit,
+    onDateClick: (LocalDate?) -> Unit, // HomeScreen에서 수정된 로직을 가진 콜백
     eventsByDate: Map<LocalDate, List<CalendarEvent>>,
-    selectedDateForDetails: LocalDate?,
+    selectedDateForDetails: LocalDate?, // 팝업을 위한 선택 날짜 (HomeScreen에서 관리)
+    dateForBorderOnly: LocalDate?,      // '테두리만 표시'를 위한 날짜 (HomeScreen에서 관리, 새로 추가)
     modifier: Modifier = Modifier,
-    onEditEventRequest: (LocalDate, CalendarEvent) -> Unit, // <<< 다시 추가
-    onDeleteEventRequest: (LocalDate, CalendarEvent) -> Unit, // <<< 다시 추가
+    onEditEventRequest: (LocalDate, CalendarEvent) -> Unit,
+    onDeleteEventRequest: (LocalDate, CalendarEvent) -> Unit,
     onTitleClick: () -> Unit,
     onCalendarIconClick: () -> Unit,
-    onTodayHeaderButtonClick: () -> Unit // <<< 새로 추가된 파라미터
+    onTodayHeaderButtonClick: () -> Unit // HomeScreen에서 수정된 로직을 가진 콜백
 ) {
     val today = LocalDate.now()
-    val daysInGrid: List<MonthlyCalendarCellData?> = remember(currentMonth, eventsByDate.entries.toList()) {
+    // currentMonth나 eventsByDate가 변경될 때만 daysInGrid를 다시 계산
+    val daysInGrid: List<MonthlyCalendarCellData?> = remember(currentMonth, eventsByDate) {
         getDaysForMonthlyCalendarGrid(currentMonth, eventsByDate)
     }
 
@@ -180,14 +182,18 @@ fun MonthlyCalendarView(
         MonthlyCalendarHeader(
             currentMonth = currentMonth,
             onPreviousMonth = {
-                val newMonth = currentMonth.minusMonths(1); onMonthChange(newMonth); onDateClick(null)
+                val newMonth = currentMonth.minusMonths(1)
+                onMonthChange(newMonth)
+                // onDateClick(null) // 달 변경 시 선택 상태 초기화는 HomeScreen의 onMonthChange에서 처리
             },
             onNextMonth = {
-                val newMonth = currentMonth.plusMonths(1); onMonthChange(newMonth); onDateClick(null)
+                val newMonth = currentMonth.plusMonths(1)
+                onMonthChange(newMonth)
+                // onDateClick(null) // 달 변경 시 선택 상태 초기화는 HomeScreen의 onMonthChange에서 처리
             },
             onTitleClick = onTitleClick,
             onCalendarIconClick = onCalendarIconClick,
-            onTodayHeaderButtonClick = onTodayHeaderButtonClick, // 새로 추가된 콜백 전달
+            onTodayHeaderButtonClick = onTodayHeaderButtonClick,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(10.dp))
@@ -196,9 +202,11 @@ fun MonthlyCalendarView(
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(7),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.Absolute.spacedBy(0.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.Absolute.spacedBy(0.dp), // 셀 사이 간격 없음
+            verticalArrangement = Arrangement.spacedBy(4.dp) // 주(행) 사이 간격
         ) {
             items(daysInGrid.size) { index ->
                 val dayInfo = daysInGrid[index]
@@ -206,13 +214,14 @@ fun MonthlyCalendarView(
                     date = dayInfo?.date,
                     isCurrentMonth = dayInfo?.isCurrentMonth ?: false,
                     isToday = dayInfo?.date == today,
-                    isSelected = dayInfo?.date == selectedDateForDetails,
+                    // MonthlyDayCell에 전달할 Boolean 값들
+                    showPopupHighlight = dayInfo?.date != null && dayInfo.date == selectedDateForDetails,
+                    showBorderOnlyHighlight = dayInfo?.date != null && dayInfo.date == dateForBorderOnly,
                     events = dayInfo?.events ?: emptyList(),
                     onClick = {
-                        dayInfo?.date?.let { clickedDate ->
-                            if (dayInfo.isCurrentMonth) {
-                                onDateClick(clickedDate)
-                            }
+                        // 현재 달의 날짜만 클릭 가능하도록 유지
+                        if (dayInfo?.date != null && dayInfo.isCurrentMonth) {
+                            onDateClick(dayInfo.date)
                         }
                     }
                 )
@@ -220,6 +229,7 @@ fun MonthlyCalendarView(
         }
     }
 }
+
 
 
 @Composable
@@ -246,12 +256,7 @@ private fun MonthlyCalendarHeader(
                 contentDescription = "오늘 날짜 달로 이동",
                 tint = TextPrimary
             )
-            // 만약 'ic_calendar_today.xml' (Vector Drawable) 파일이 res/drawable 에 있다면:
-            // Icon(
-            //     painter = painterResource(id = R.drawable.ic_calendar_today),
-            //     contentDescription = "오늘 날짜 달로 이동",
-            //     tint = TextPrimary
-            // )
+
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -311,42 +316,56 @@ private fun MonthlyDayCell(
     date: LocalDate?,
     isCurrentMonth: Boolean,
     isToday: Boolean,
-    isSelected: Boolean,
+    showPopupHighlight: Boolean,      // 이름 변경: isSelected -> showPopupHighlight
+    showBorderOnlyHighlight: Boolean, // 새로 추가된 파라미터
     events: List<CalendarEvent>,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier // 이 modifier는 LazyVerticalGrid의 각 셀에 의해 채워짐
+    modifier: Modifier = Modifier // LazyVerticalGrid의 각 셀에 의해 채워짐
 ) {
-    val cellHeight = 90.dp
-    // ... (나머지 스타일 로직은 이전과 동일하게 유지)
-    val textColor = if (!isCurrentMonth) OtherMonthDayText else TextPrimary
-    val finalBackgroundColor = when {
-        isSelected -> SelectedMonthlyBorder.copy(alpha = 0.2f)
-        isToday && isCurrentMonth -> TodayMonthlyBackground // 현재 달의 오늘만 특별 배경
-        else -> Color.Transparent
+    val cellHeight = 90.dp // 셀 높이
+    val textColor = if (!isCurrentMonth) OtherMonthDayText else TextPrimary // 다른 달 날짜 색상
+
+    // 상태에 따라 테두리와 배경색 결정 (이전 답변의 로직 사용)
+    val actualBorderColor: Color
+    val actualBorderWidth: Dp
+    val actualBackgroundColor: Color
+
+    if (showBorderOnlyHighlight) {
+        // 경우 1: '테두리만 표시' 상태 (오늘 날짜 첫 클릭 또는 헤더 '오늘' 버튼 클릭 후)
+        actualBorderColor = SelectedMonthlyBorder // 테두리 색 (Color.kt에 정의 가정)
+        actualBorderWidth = 1.5.dp               // 테두리 두께
+        actualBackgroundColor = if (isToday && isCurrentMonth) TodayMonthlyBackground else Color.Transparent
+    } else if (showPopupHighlight) {
+        // 경우 2: 팝업을 위해 날짜가 선택된 상태
+        actualBorderColor = SelectedMonthlyBorder
+        actualBorderWidth = 1.5.dp
+        actualBackgroundColor = SelectedMonthlyBorder.copy(alpha = 0.2f) // 팝업 선택 시 배경색
+    } else {
+        // 경우 3: 아무것도 선택되지 않은 일반 날짜
+        actualBorderColor = Color.Transparent
+        actualBorderWidth = 0.dp
+        actualBackgroundColor = if (isToday && isCurrentMonth) TodayMonthlyBackground else Color.Transparent
     }
-    val finalBorderColor = if (isSelected) SelectedMonthlyBorder else Color.Transparent
-    val finalBorderWidth = if (isSelected) 1.5.dp else 0.dp
 
     Box(
         modifier = modifier // LazyVerticalGrid에 의해 크기가 결정됨 (1/7 너비)
             .height(cellHeight)
-            .clip(RoundedCornerShape(4.dp))
-            .background(finalBackgroundColor)
-            .border(BorderStroke(finalBorderWidth, finalBorderColor), RoundedCornerShape(4.dp))
-            .clickable(enabled = date != null && isCurrentMonth) { onClick() }
-            // 셀 내부 패딩으로 내용물 위치 조정
-            .padding(horizontal = 3.dp, vertical = 4.dp), // 기존 내부 패딩 유지
-        contentAlignment = Alignment.TopCenter
+            .clip(RoundedCornerShape(4.dp)) // 셀 모양
+            .background(actualBackgroundColor) // 결정된 배경색 적용
+            .border(BorderStroke(actualBorderWidth, actualBorderColor), RoundedCornerShape(4.dp)) // 결정된 테두리 적용
+            .clickable(enabled = date != null && isCurrentMonth) { onClick() } // 현재 달만 클릭 가능
+            .padding(horizontal = 3.dp, vertical = 4.dp), // 셀 내부 패딩
+        contentAlignment = Alignment.TopCenter // 내용물 정렬
     ) {
-        // ... (날짜 및 이벤트 표시 로직은 이전과 동일)
         if (date != null) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxHeight()
+                modifier = Modifier.fillMaxHeight() // 내부 Column이 Box 높이 채우도록
             ) {
+                // 날짜 숫자 표시
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically // 날짜와 +N 표시 수직 정렬
                 ) {
                     Text(
                         text = date.dayOfMonth.toString(),
@@ -356,42 +375,46 @@ private fun MonthlyDayCell(
                             fontSize = 12.sp
                         ),
                         color = if (isToday && isCurrentMonth) TextPrimary else textColor,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f) // 날짜 텍스트가 공간 차지
                     )
+                    // 이벤트가 3개 초과 시 +N 표시
                     if (isCurrentMonth && events.size > 3) {
                         Text(
                             text = "+${events.size - 3}",
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.primary, // 테마 색상 사용
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 8.sp),
-                            textAlign = TextAlign.End
+                            textAlign = TextAlign.End // 오른쪽 정렬
                         )
                     }
                 }
-                if(isCurrentMonth) {
+
+                // 이벤트 목록 표시 (최대 3개)
+                if (isCurrentMonth) {
                     Column(
                         modifier = Modifier
-                            .weight(1f)
+                            .weight(1f) // 남은 공간 차지
                             .fillMaxWidth()
-                            .padding(top = 2.dp),
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.spacedBy(1.dp)
+                            .padding(top = 2.dp), // 날짜 숫자와 이벤트 목록 사이 간격
+                        horizontalAlignment = Alignment.Start, // 이벤트 텍스트 왼쪽 정렬
+                        verticalArrangement = Arrangement.spacedBy(1.dp) // 이벤트 간 수직 간격
                     ) {
                         events.take(3).forEach { event ->
                             Text(
                                 text = event.description,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f), // 이벤트 텍스트 색상
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), // 이벤트 폰트 크기
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Start,
+                                textAlign = TextAlign.Start, // 이벤트 텍스트 왼쪽 정렬
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f), RoundedCornerShape(2.dp))
-                                    .padding(horizontal = 2.dp, vertical = 0.5.dp)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f), RoundedCornerShape(2.dp)) // 이벤트 배경
+                                    .padding(horizontal = 2.dp, vertical = 0.5.dp) // 이벤트 내부 패딩
                             )
                         }
                     }
                 } else {
+                    // 현재 달이 아니면 이벤트 공간은 비워둠
                     Spacer(Modifier.weight(1f))
                 }
             }
@@ -500,18 +523,42 @@ fun MonthlyCalendarViewFullPreview() {
             ),
             today.minusDays(2) to listOf(CalendarEvent(description = "지난 일정"))
         )
-        var selectedDateForPreview by remember { mutableStateOf<LocalDate?>(null) }
+
+        var currentMonthPreview by remember { mutableStateOf(YearMonth.now()) }
+        // --- HomeScreen의 상태 로직을 흉내내기 위한 상태 변수들 ---
+        var selectedDateForDetailsPreview by remember { mutableStateOf<LocalDate?>(null) }
+        var dateForBorderOnlyPreview by remember { mutableStateOf<LocalDate?>(null) } // <<< 이 상태 추가
+        // ---
 
         Column(Modifier.background(ScreenBackground)) { // ScreenBackground는 테마에 정의되어 있어야 함
             MonthlyCalendarView(
-                currentMonth = YearMonth.now(),
-                onMonthChange = { println("Month changed to: $it") },
-                onDateClick = { date ->
-                    selectedDateForPreview = date
-                    println("Date clicked: $date")
+                currentMonth = currentMonthPreview,
+                onMonthChange = { newMonth ->
+                    currentMonthPreview = newMonth
+                    // HomeScreen의 onMonthChange 처럼 상태 초기화
+                    selectedDateForDetailsPreview = null
+                    dateForBorderOnlyPreview = null
+                    println("Month changed to: $newMonth")
+                },
+                onDateClick = { clickedDate -> // HomeScreen의 onDateClick 로직을 여기에 간략히 구현
+                    if (clickedDate == null) return@MonthlyCalendarView // 이 부분은 MonthlyCalendarView 호출부에 맞게 조정
+                    if (clickedDate == today) {
+                        if (dateForBorderOnlyPreview == today) { // 이미 테두리만 있는 오늘을 클릭
+                            selectedDateForDetailsPreview = today
+                            dateForBorderOnlyPreview = null
+                        } else { // 오늘 첫 클릭
+                            selectedDateForDetailsPreview = null
+                            dateForBorderOnlyPreview = today
+                        }
+                    } else { // 다른 날짜 클릭
+                        selectedDateForDetailsPreview = clickedDate
+                        dateForBorderOnlyPreview = null
+                    }
+                    println("Date clicked: $clickedDate, BorderFor: $dateForBorderOnlyPreview, PopupFor: $selectedDateForDetailsPreview")
                 },
                 eventsByDate = dummyEvents,
-                selectedDateForDetails = selectedDateForPreview,
+                selectedDateForDetails = selectedDateForDetailsPreview, // 프리뷰용 상태 전달
+                dateForBorderOnly = dateForBorderOnlyPreview,      // <<< 누락된 파라미터 전달
                 onEditEventRequest = { date: LocalDate, event: CalendarEvent ->
                     println("Edit event $event on $date requested")
                 },
@@ -520,8 +567,16 @@ fun MonthlyCalendarViewFullPreview() {
                 },
                 onTitleClick = { println("Month Title clicked (for view toggle)") },
                 onCalendarIconClick = { println("Calendar Icon clicked (for time picker)") },
-                onTodayHeaderButtonClick = { println("Today Header Button Clicked in Preview") } // <<< 추가된 파라미터
+                onTodayHeaderButtonClick = { // HomeScreen의 onTodayHeaderButtonClick 로직 구현
+                    currentMonthPreview = YearMonth.now()
+                    selectedDateForDetailsPreview = null
+                    dateForBorderOnlyPreview = LocalDate.now()
+                    println("Today Header Button Clicked. BorderFor: $dateForBorderOnlyPreview, PopupFor: $selectedDateForDetailsPreview")
+                }
             )
+            // 선택 상태 확인용 텍스트 (디버깅용) - 필요하다면 추가
+            Text("Selected for Details (Popup): ${selectedDateForDetailsPreview?.toString() ?: "None"}")
+            Text("Border Only For (Today first click): ${dateForBorderOnlyPreview?.toString() ?: "None"}")
         }
     }
 }

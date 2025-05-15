@@ -34,6 +34,7 @@ fun ActualHomeScreenContent(
     currentYearMonthFormatted: String,
     isMonthlyView: Boolean,
     selectedDateForDetails: LocalDate?,
+    dateForBorderOnly: LocalDate?,
     eventsByDate: Map<LocalDate, List<CalendarEvent>>,
     weeklyCalendarData: List<WeeklyCalendarDay>,
     isQuestionAnsweredByAll: Boolean,
@@ -51,6 +52,7 @@ fun ActualHomeScreenContent(
     onEditEventRequest: (LocalDate, CalendarEvent) -> Unit,
     onDeleteEventRequest: (LocalDate, CalendarEvent) -> Unit,
     modifier: Modifier = Modifier
+
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -84,6 +86,7 @@ fun ActualHomeScreenContent(
 
                 if (isMonthlyView) {
                     MonthlyCalendarView( // MonthlyCalendarView 호출
+                        dateForBorderOnly = dateForBorderOnly,
                         currentMonth = currentYearMonth,
                         onMonthChange = onMonthChange,
                         onDateClick = onDateClick,
