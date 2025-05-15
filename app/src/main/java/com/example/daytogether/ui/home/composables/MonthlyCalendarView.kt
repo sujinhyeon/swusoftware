@@ -364,63 +364,57 @@ private fun MonthlyDayCell(
             .background(actualBackgroundColor)
             .border(BorderStroke(actualBorderWidth, actualBorderColor), RoundedCornerShape(4.dp))
             .clickable(enabled = date != null && isCurrentMonth) { onClick() }
-            .padding(horizontal = 3.dp, vertical = 4.dp), // 셀 내부의 전체적인 패딩
-        contentAlignment = Alignment.TopStart // 내부 Column을 위쪽-시작점에 배치
+            .padding(horizontal = 3.dp, vertical = 4.dp),
+        contentAlignment = Alignment.TopStart
     ) {
         if (date != null) {
             Column(
-                // horizontalAlignment = Alignment.CenterHorizontally, // Column 전체 정렬 불필요
                 modifier = Modifier.fillMaxHeight()
             ) {
-                // 날짜 숫자와 "+n"을 담는 Row
                 Row(
-                    modifier = Modifier.fillMaxWidth(), // Row는 셀의 전체 너비를 사용
-                    verticalAlignment = Alignment.CenterVertically, // 날짜와 +n 수직 중앙 정렬
-                    horizontalArrangement = Arrangement.SpaceBetween // <<< 날짜는 왼쪽에, +n은 오른쪽에 배치
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // 날짜 숫자 Text
                     Text(
                         text = date.dayOfMonth.toString(),
-                        textAlign = TextAlign.Start, // <<< 날짜 숫자는 텍스트 박스 내에서 왼쪽 정렬
+                        textAlign = TextAlign.Start,
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = if (isToday && isCurrentMonth) FontWeight.ExtraBold else FontWeight.Normal,
                             fontSize = 12.sp
                         ),
                         color = if (isToday && isCurrentMonth) TextPrimary else textColor,
-                        modifier = Modifier // weight(1f) 제거하여 내용만큼만 공간 차지
+                        modifier = Modifier
                     )
-
-                    // "+n" (추가 이벤트 개수) Text
-                    if (isCurrentMonth && events.size > 3) {
+                    // ★ 2. 이벤트가 4개 초과 시 +N 표시 ★
+                    if (isCurrentMonth && events.size > 4) { // 3에서 4로 변경
                         Text(
-                            text = "+${events.size - 3}",
+                            text = "+${events.size - 4}", // 3에서 4로 변경
                             color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 8.sp),
-                            textAlign = TextAlign.End, // <<< "+n" 텍스트는 텍스트 박스 내에서 오른쪽 정렬
-                            modifier = Modifier // weight(1f) 제거하여 내용만큼만 공간 차지
+                            textAlign = TextAlign.End
                         )
                     }
-                    // "+n"이 없을 경우, SpaceBetween에 의해 날짜는 자동으로 왼쪽에 위치함
                 }
 
-                // 이벤트 목록 표시 Column (이전과 동일한 정렬 유지 - 왼쪽 정렬)
                 if (isCurrentMonth) {
                     Column(
                         modifier = Modifier
-                            .weight(1f) // 남은 공간 차지
+                            .weight(1f)
                             .fillMaxWidth()
                             .padding(top = 2.dp),
-                        horizontalAlignment = Alignment.Start, // 이벤트 텍스트 왼쪽 정렬
+                        horizontalAlignment = Alignment.Start,
                         verticalArrangement = Arrangement.spacedBy(1.dp)
                     ) {
-                        events.take(3).forEach { event ->
+                        // ★ 2. 최대 4개의 이벤트 표시 ★
+                        events.take(4).forEach { event ->
                             Text(
                                 text = event.description,
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Start, // 이벤트도 왼쪽 정렬
+                                textAlign = TextAlign.Start,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f), RoundedCornerShape(2.dp))
@@ -429,7 +423,7 @@ private fun MonthlyDayCell(
                         }
                     }
                 } else {
-                    Spacer(Modifier.weight(1f)) // 현재 달이 아니면 이벤트 공간 비움
+                    Spacer(Modifier.weight(1f))
                 }
             }
         }

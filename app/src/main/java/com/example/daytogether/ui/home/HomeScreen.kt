@@ -1,39 +1,16 @@
-package com.example.daytogether.ui.home // 실제 패키지 경로
+package com.example.daytogether.ui.home
 
 import com.example.daytogether.ui.home.composables.*
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview // Preview 사용시
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.daytogether.R
 import com.example.daytogether.data.model.CalendarEvent
 import com.example.daytogether.data.model.WeeklyCalendarDay
-import com.example.daytogether.ui.home.composables.ActualHomeScreenContent // ActualHomeScreenContent 경로
-import com.example.daytogether.ui.home.composables.EventListItem // EventListItem 경로
-import com.example.daytogether.ui.home.composables.YearMonthPickerDialog
-import com.example.daytogether.ui.home.composables.AddEventInputView
 import com.example.daytogether.ui.theme.DaytogetherTheme // 사용자 정의 테마
-import com.example.daytogether.ui.theme.TextPrimary // 사용자 정의 색상
-import com.example.daytogether.ui.theme.ScreenBackground // 사용자 정의 색상
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -46,94 +23,7 @@ import java.time.DayOfWeek as JavaDayOfWeek
 val LocalDate.yearMonth: YearMonth
     get() = YearMonth.of(this.year, this.month)
 
-@Composable
-fun DateEventsBottomSheet(
-    visible: Boolean,
-    targetDate: LocalDate,
-    events: List<CalendarEvent>,
-    onDismiss: () -> Unit,
-    onAddNewEventClick: () -> Unit,
-    onEditEvent: (CalendarEvent) -> Unit,
-    onDeleteEvent: (CalendarEvent) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val dateFormatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 (E)", Locale.KOREAN)
 
-    AnimatedVisibility(
-        visible = visible,
-        enter = slideInVertically(animationSpec = tween(durationMillis = 250), initialOffsetY = { it }),
-        exit = slideOutVertically(animationSpec = tween(durationMillis = 200), targetOffsetY = { it }),
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .defaultMinSize(minHeight = 200.dp),
-            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Row( // 헤더
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = targetDate.format(dateFormatter),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = TextPrimary)
-                    )
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
-                        Icon(Icons.Filled.Close, contentDescription = "닫기", tint = TextPrimary.copy(alpha = 0.7f))
-                    }
-                }
-                HorizontalDivider(color = TextPrimary.copy(alpha = 0.2f))
-
-                if (events.isEmpty()) { // 이벤트 없을 때
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Button(
-                            onClick = onAddNewEventClick,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                            contentPadding = PaddingValues(8.dp)
-                        ) {
-                            Icon(Icons.Filled.Add, contentDescription = "새 일정 만들기 아이콘", tint = TextPrimary)
-                            Spacer(Modifier.width(8.dp))
-                            Text("새 일정 만들기", color = TextPrimary, style = MaterialTheme.typography.bodyLarge)
-                        }
-                    }
-                } else { // 이벤트 있을 때
-                    LazyColumn(
-                        modifier = Modifier.weight(1f, fill = false).padding(top = 8.dp, bottom = 8.dp)
-                    ) {
-                        items(items = events, key = { event -> event.id }) { event ->
-                            EventListItem(
-                                event = event,
-                                onEditClick = { onEditEvent(event) },
-                                onDeleteClick = { onDeleteEvent(event) }
-                            )
-                            HorizontalDivider(color = TextPrimary.copy(alpha = 0.1f))
-                        }
-                    }
-                    Button( // 목록 하단 새 일정 만들기 버튼
-                        onClick = onAddNewEventClick,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                        contentPadding = PaddingValues(8.dp)
-                    ) {
-                        Icon(Icons.Filled.Add, contentDescription = "새 일정 만들기 아이콘", tint = TextPrimary)
-                        Spacer(Modifier.width(8.dp))
-                        Text("새 일정 만들기", color = TextPrimary, style = MaterialTheme.typography.bodyLarge)
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun HomeScreen() {
@@ -361,9 +251,10 @@ fun HomeScreen() {
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
                 AddEventInputView(
-                    visible = true,
+                    visible = showAddEventInputViewFlag,
                     targetDate = targetDate,
                     eventDescription = newEventDescriptionState,
+                    isEditing = editingEventState?.second != null,
                     onDescriptionChange = { desc -> newEventDescriptionState = desc },
                     onSave = onSaveNewEventLambda,
                     onCancel = onCancelNewEventInputLambda
