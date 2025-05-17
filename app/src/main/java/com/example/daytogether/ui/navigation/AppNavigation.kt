@@ -1,7 +1,7 @@
 package com.example.daytogether.navigation
 
 import android.util.Log
-import androidx.compose.material3.Text
+// import androidx.compose.material3.Text // SignUpScreen, FindAccountScreen을 실제 컴포저블로 대체하면 필요 없을 수 있음
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,20 +9,19 @@ import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.daytogether.ui.auth.FindAccountScreen // FindAccountScreen 임포트
 import com.example.daytogether.ui.auth.LoginScreen // LoginScreen 임포트
-import com.example.daytogether.ui.home.HomeScreen
+import com.example.daytogether.ui.auth.SignUpScreen // SignUpScreen 임포트
+import com.example.daytogether.ui.home.HomeScreen // HomeScreen 임포트 (중복 제거)
 import com.example.daytogether.ui.onboarding.OnboardingScreen
 import com.example.daytogether.ui.splash.SplashScreen
-import com.example.daytogether.ui.home.HomeScreen // MainScreen 임포트 (하단 네비게이션 포함)
-// import com.example.daytogether.ui.auth.SignUpScreen // 실제 SignUpScreen 경로로 수정 필요
-// import com.example.daytogether.ui.auth.FindAccountScreen // 실제 FindAccountScreen 경로로 수정 필요
 
 // 라우트 정의 객체
 object AppDestinations {
     const val SPLASH_ROUTE = "splash"
     const val ONBOARDING_ROUTE = "onboarding"
     const val LOGIN_ROUTE = "login" // 온보딩 페이저 내 로그인 외 별도 로그인 화면 접근 시
-    const val MAIN_ROUTE = "main_graph" // 메인 화면 진입점 (하단 네비게이션을 포함하는 그래프)
+    const val MAIN_ROUTE = "main_graph" // 메인 화면 진입점
     const val SIGNUP_ROUTE = "signup"
     const val FIND_ACCOUNT_ROUTE = "find_account"
 }
@@ -78,22 +77,25 @@ fun AppNavigation(
 
         composable(AppDestinations.SIGNUP_ROUTE) {
             Log.d("AppNavigation", "Current Route: ${AppDestinations.SIGNUP_ROUTE}")
-            // 여기에 실제 회원가입 화면 컴포저블을 배치합니다.
-            // 예: SignUpScreen(navController = navController)
-            Text("회원가입 화면입니다. (구현 예정)") // 임시
+            // SignUpScreen Composable 호출
+            SignUpScreen(navController = navController)
         }
 
         composable(AppDestinations.FIND_ACCOUNT_ROUTE) {
             Log.d("AppNavigation", "Current Route: ${AppDestinations.FIND_ACCOUNT_ROUTE}")
-            // 여기에 실제 아이디/비밀번호 찾기 화면 컴포저블을 배치합니다.
-            // 예: FindAccountScreen(navController = navController)
-            Text("아이디/비밀번호 찾기 화면입니다. (구현 예정)") // 임시
+            // FindAccountScreen Composable 호출
+            FindAccountScreen(navController = navController)
         }
 
         composable(AppDestinations.MAIN_ROUTE) {
             Log.d("AppNavigation", "Current Route: ${AppDestinations.MAIN_ROUTE}")
-            // MainScreen은 내부에 Scaffold와 BottomNavigation, 그리고 자체 NavHost를 가집니다.
-            HomeScreen()
+            // MainScreen이 아니라 HomeScreen을 호출 (사용자 요청 반영)
+            // HomeScreen은 내부에 Scaffold와 BottomNavigation, 그리고 자체 NavHost를 가질 수 있습니다.
+            // 또는, HomeScreen 자체가 메인 화면의 "내용"만 담당하고,
+            // 하단 네비게이션 바를 포함한 전체적인 프레임은 별도의 Composable(예: MainScaffoldScreen)에서 관리할 수도 있습니다.
+            // 현재 MainActivity.kt의 구조를 보면 HomeScreen이 이 역할을 해야 할 것 같습니다.
+            HomeScreen() // MainActivity의 AppNavigationHost와 유사한 역할을 여기서 해야 함
+            // 또는 MainScreen.kt 파일을 만들고 그 안에서 HomeScreen 등을 내부 화면으로 관리
         }
     }
 }
