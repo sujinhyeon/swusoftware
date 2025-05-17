@@ -57,7 +57,7 @@ fun AppNavigationHost(navController: NavHostController, modifier: Modifier = Mod
     ) {
         composable(Routes.HOME) {
 
-            HomeScreen()
+            HomeScreen(appNavController = navController)
         }
         composable(Routes.MESSAGE) { Text("메시지 화면입니다.") } // 실제 화면으로 교체 필요
         composable(Routes.GALLERY) { Text("갤러리 화면입니다.") } // 실제 화면으로 교체 필요

@@ -39,28 +39,38 @@ fun AppNavigation(
     val isFirstLaunch by remember { mutableStateOf(true) }
     Log.d("AppNavigation", "isFirstLaunch 값: $isFirstLaunch")
 
-    val startDestination = AppDestinations.SPLASH_ROUTE
-    Log.d("AppNavigation", "AppNavigation NavHost startDestination: $startDestination")
+    // --- UI 개발 중 임시로 메인 화면으로 바로 시작 ---
+    val startDestination = AppDestinations.MAIN_ROUTE // <--- 시작점을 메인으로 변경!
+    Log.d("AppNavigation", "임시 UI 개발 모드: 시작 지점 = $startDestination")
+    // --- 원래 로직 (주석 처리) ---
+    // val isFirstLaunch by remember { mutableStateOf(true) }
+    // Log.d("AppNavigation", "isFirstLaunch 값: $isFirstLaunch")
+    // val startDestination = AppDestinations.SPLASH_ROUTE
+    // Log.d("AppNavigation", "AppNavigation NavHost startDestination: $startDestination")
+    // --- 원래 로직 끝 ---
+
 
     NavHost(navController = navController, startDestination = startDestination) {
-        composable(AppDestinations.EDIT_PROFILE_ROUTE) {
-            Log.d("AppNavigation", "Current Route: ${AppDestinations.EDIT_PROFILE_ROUTE}")
-            EditProfileScreen(navController = navController)
-        }
         composable(AppDestinations.SPLASH_ROUTE) {
             Log.d("AppNavigation", "Current Route: ${AppDestinations.SPLASH_ROUTE}")
             SplashScreen(
                 onTimeout = {
-                    val route = if (isFirstLaunch) {
-                        Log.d("AppNavigation", "SplashScreen Timeout: Navigating to ONBOARDING_ROUTE")
-                        AppDestinations.ONBOARDING_ROUTE
-                    } else {
-                        Log.d("AppNavigation", "SplashScreen Timeout: Navigating to MAIN_ROUTE")
-                        AppDestinations.MAIN_ROUTE
-                    }
-                    navController.navigate(route) {
+                    // --- UI 개발 중 임시 로직 ---
+                    navController.navigate(AppDestinations.MAIN_ROUTE) { // 스플래시 후 무조건 메인으로 (임시)
                         popUpTo(AppDestinations.SPLASH_ROUTE) { inclusive = true }
                     }
+                    // --- 원래 로직 (주석 처리) ---
+                    // val route = if (isFirstLaunch) {
+                    //     Log.d("AppNavigation", "SplashScreen Timeout: Navigating to ONBOARDING_ROUTE")
+                    //     AppDestinations.ONBOARDING_ROUTE
+                    // } else {
+                    //     Log.d("AppNavigation", "SplashScreen Timeout: Navigating to MAIN_ROUTE")
+                    //     AppDestinations.MAIN_ROUTE
+                    // }
+                    // navController.navigate(route) {
+                    //     popUpTo(AppDestinations.SPLASH_ROUTE) { inclusive = true }
+                    // }
+                    // --- 원래 로직 끝 ---
                 }
             )
         }
@@ -100,7 +110,7 @@ fun AppNavigation(
             // 또는, HomeScreen 자체가 메인 화면의 "내용"만 담당하고,
             // 하단 네비게이션 바를 포함한 전체적인 프레임은 별도의 Composable(예: MainScaffoldScreen)에서 관리할 수도 있습니다.
             // 현재 MainActivity.kt의 구조를 보면 HomeScreen이 이 역할을 해야 할 것 같습니다.
-            HomeScreen() // MainActivity의 AppNavigationHost와 유사한 역할을 여기서 해야 함
+            HomeScreen(appNavController = navController) // MainActivity의 AppNavigationHost와 유사한 역할을 여기서 해야 함
             // 또는 MainScreen.kt 파일을 만들고 그 안에서 HomeScreen 등을 내부 화면으로 관리
         }
     }

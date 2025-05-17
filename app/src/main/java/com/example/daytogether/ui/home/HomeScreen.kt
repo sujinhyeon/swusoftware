@@ -1,58 +1,82 @@
 package com.example.daytogether.ui.home
 
-import com.example.daytogether.ui.home.composables.*
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf // HomeScreen 상태 관리를 위해 필요
+import androidx.compose.runtime.remember // HomeScreen 상태 관리를 위해 필요
+import androidx.compose.runtime.setValue // HomeScreen 상태 관리를 위해 필요
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.daytogether.R
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController // appNavController 타입
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.example.daytogether.R // 아이콘 리소스
+import com.example.daytogether.ui.navigation.BottomNavItem // BottomNavItem 정의
+import com.example.daytogether.ui.settings.SettingsScreen // SettingsScreen 임포트
+import com.example.daytogether.ui.theme.DaytogetherTheme // 앱 테마
+import com.example.daytogether.ui.theme.NavIconSelected // 테마 색상
+import com.example.daytogether.ui.theme.NavIconUnselected // 테마 색상
+import com.example.daytogether.ui.theme.TextPrimary // 테마 색상
+
+// ActualHomeScreenContent를 호출하기 위한 임시 데이터 및 콜백 (실제로는 ViewModel 등에서 관리)
+// 이 부분은 실제 프로젝트의 상태 관리 방식에 맞게 수정되어야 합니다.
+// 지금은 HomeScreen이 정상적으로 Scaffold와 NavHost를 통해 ActualHomeScreenContent를
+// 호출하고 화면에 그릴 수 있도록 하기 위한 최소한의 구조입니다.
 import com.example.daytogether.data.model.CalendarEvent
 import com.example.daytogether.data.model.WeeklyCalendarDay
-import com.example.daytogether.ui.theme.DaytogetherTheme
+import com.example.daytogether.ui.home.composables.ActualHomeScreenContent // ActualHomeScreenContent 임포트
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.random.Random
 import java.time.DayOfWeek as JavaDayOfWeek
 
-val LocalDate.yearMonth: YearMonth
-    get() = YearMonth.of(this.year, this.month)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
-    var upcomingAnniversaryText by remember { mutableStateOf("D-3 가족 기념일! 오늘은 즐거운 하루 보내세요!") }
+fun HomeScreen(appNavController: NavController) { // AppNavigation으로부터 NavController를 받음
+    val mainNavController = rememberNavController() // 하단 탭 내부 화면 전환용 NavController
+
+    // BottomNavItem 리스트 (BottomNavItem.kt 파일 내용 참고)
+    // 각 아이콘 리소스 ID는 실제 프로젝트에 맞게 수정해야 합니다.
+    val bottomNavItems = listOf(
+        BottomNavItem.Home,
+        BottomNavItem.Message,
+        BottomNavItem.Gallery,
+        BottomNavItem.Settings
+    )
+
+    // HomeScreen 내부의 상태 변수들 (ActualHomeScreenContent에 전달하기 위함)
+    // 이 부분은 실제 앱에서는 ViewModel을 통해 관리하는 것이 좋습니다.
+    // 여기서는 UI 구조를 잡기 위한 예시 값을 사용합니다.
+    var upcomingAnniversaryText by remember { mutableStateOf("D-3 샘플 기념일!") }
     var dDayTextState by remember { mutableStateOf("D-3") }
-    var isAnniversaryAvailable by remember { mutableStateOf(true) }
-    var dDayTitleState by remember { mutableStateOf(if (isAnniversaryAvailable) "엄마 생일" else "기념일 없음") }
-
+    var dDayTitleState by remember { mutableStateOf("샘플 기념일") }
     var currentYearMonth by remember { mutableStateOf(YearMonth.now()) }
-
     var isMonthlyView by remember { mutableStateOf(false) }
     var selectedDateForDetails by remember { mutableStateOf<LocalDate?>(null) }
     var dateForBorderOnly by remember { mutableStateOf<LocalDate?>(null) }
     val today = LocalDate.now()
-
-    var showYearMonthPickerDialog by remember { mutableStateOf(false) }
-
-    var showAddEventInputViewFlag by remember { mutableStateOf(false) }
-    var newEventDescriptionState by remember { mutableStateOf("") }
-    var editingEventState by remember { mutableStateOf<Pair<LocalDate, CalendarEvent?>?>(null) }
-
-    val eventsByDateState = remember {
-        mutableStateMapOf<LocalDate, List<CalendarEvent>>().apply {
-            put(today.plusDays(1), listOf(CalendarEvent(description = "회의"), CalendarEvent(description = "점심")))
-            put(today.plusDays(3), listOf(CalendarEvent(description = "발표"), CalendarEvent(description = "스터디"), CalendarEvent(description = "운동")))
-            put(today, listOf(CalendarEvent(description="오늘 미팅"), CalendarEvent(description="오늘 약속")))
-        }
-    }
-
-    val weeklyCalendarDataState = remember(today, eventsByDateState, isMonthlyView) {
-        val referenceDateForWeek = today
-        val firstDayOfRelevantWeek = referenceDateForWeek.with(JavaDayOfWeek.MONDAY)
+    val eventsByDateState = remember { mutableStateMapOf<LocalDate, List<CalendarEvent>>() }
+    val weeklyCalendarDataState = remember(today, eventsByDateState) {
+        val firstDayOfRelevantWeek = today.with(JavaDayOfWeek.MONDAY)
         (0 until 7).map { dayOffset ->
             val date = firstDayOfRelevantWeek.plusDays(dayOffset.toLong())
             WeeklyCalendarDay(
@@ -63,289 +87,106 @@ fun HomeScreen() {
             )
         }
     }
-
     var isQuestionAnsweredByAllState by remember { mutableStateOf(false) }
-    var aiQuestionState by remember { mutableStateOf("우리 가족만의 별명(애칭)이 있나요?") }
-    var familyQuoteState by remember { mutableStateOf("\"가족은 자격이 아니라 특권이다.\" - 클린트 이스트우드") }
+    var aiQuestionState by remember { mutableStateOf("오늘의 AI 질문 예시입니다.") }
+    var familyQuoteState by remember { mutableStateOf("\"가족 명언 예시입니다.\"") }
+    val randomCloudResIds = remember { listOf(R.drawable.cloud1, R.drawable.cloud2) } // 실제 drawable 확인
 
-    val cloudImages = remember { listOf(R.drawable.cloud1, R.drawable.cloud2) }
-    val numberOfClouds by remember(cloudImages) { mutableStateOf(if (cloudImages.isNotEmpty()) Random.nextInt(1, cloudImages.size + 1) else 0) }
-    val randomCloudResIds: List<Int> = remember(numberOfClouds, cloudImages) { cloudImages.shuffled().take(numberOfClouds) }
+    Scaffold(
+        bottomBar = {
+            Column {
+                Divider(color = TextPrimary.copy(alpha = 0.2f), thickness = 0.5.dp)
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ) {
+                    val navBackStackEntry by mainNavController.currentBackStackEntryAsState()
+                    val currentDestination = navBackStackEntry?.destination
 
-    val commonEditEventLogic: (LocalDate, CalendarEvent?) -> Unit = { date, event ->
-        editingEventState = date to event
-        newEventDescriptionState = event?.description ?: ""
-        showAddEventInputViewFlag = true
-        selectedDateForDetails = null
-        dateForBorderOnly = null
-    }
-
-    val onSaveNewEventLambda: () -> Unit = {
-        editingEventState?.let { (date, eventToEdit) ->
-            if (newEventDescriptionState.isNotBlank()) {
-                val currentEvents = eventsByDateState[date]?.toList() ?: emptyList()
-                val newEventList: List<CalendarEvent>
-                if (eventToEdit != null) {
-                    var eventUpdated = false
-                    newEventList = currentEvents.map { existingEvent ->
-                        if (existingEvent.id == eventToEdit.id) {
-                            eventUpdated = true
-                            existingEvent.copy(description = newEventDescriptionState)
-                        } else { existingEvent }
+                    bottomNavItems.forEach { screen ->
+                        val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                        NavigationBarItem(
+                            icon = {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(id = screen.iconResId),
+                                    contentDescription = screen.label,
+                                    tint = if (isSelected) NavIconSelected else NavIconUnselected
+                                )
+                            },
+                            selected = isSelected,
+                            onClick = {
+                                mainNavController.navigate(screen.route) {
+                                    popUpTo(mainNavController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            alwaysShowLabel = false,
+                            colors = NavigationBarItemDefaults.colors(
+                                indicatorColor = Color.Transparent
+                            )
+                        )
                     }
-                    if (!eventUpdated) { /* ID가 같은 이벤트가 없는 경우의 처리 (선택적) */ }
-                } else {
-                    newEventList = currentEvents + CalendarEvent(description = newEventDescriptionState)
                 }
-                eventsByDateState[date] = newEventList
             }
         }
-        showAddEventInputViewFlag = false
-        newEventDescriptionState = ""
-        editingEventState = null
-    }
-
-    val onCancelNewEventInputLambda: () -> Unit = {
-        showAddEventInputViewFlag = false
-        newEventDescriptionState = ""
-        editingEventState = null
-    }
-
-    val onDeleteEventRequestInHomeScreenLambda: (LocalDate, CalendarEvent) -> Unit = { date, eventToDelete ->
-        eventsByDateState[date]?.let { currentEventsList ->
-            val updatedEvents = currentEventsList.filterNot { it.id == eventToDelete.id }
-            if (updatedEvents.isEmpty()) {
-                eventsByDateState.remove(date)
-            } else {
-                eventsByDateState[date] = updatedEvents.toList()
-            }
-        }
-        if (eventsByDateState[date].isNullOrEmpty() && selectedDateForDetails == date) {
-            selectedDateForDetails = null
-            dateForBorderOnly = null
-        }
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        ActualHomeScreenContent(
-            upcomingAnniversaryText = upcomingAnniversaryText,
-            dDayText = dDayTextState,
-            dDayTitle = dDayTitleState,
-            randomCloudResIds = randomCloudResIds,
-            currentYearMonth = currentYearMonth,
-            // currentYearMonthFormatted 파라미터는 ActualHomeScreenContent 내부에서 계산하므로 전달 안 함
-            isMonthlyView = isMonthlyView,
-            selectedDateForDetails = selectedDateForDetails,
-            // dateForBorderOnly는 아래 다른 파라미터들 사이에 올바르게 한 번만 전달됩니다.
-            eventsByDate = eventsByDateState,
-            weeklyCalendarData = weeklyCalendarDataState,
-            isQuestionAnsweredByAll = isQuestionAnsweredByAllState,
-            aiQuestion = aiQuestionState,
-            familyQuote = familyQuoteState,
-            showAddEventInputScreen = showAddEventInputViewFlag,
-            isBottomBarVisible = selectedDateForDetails != null && !showAddEventInputViewFlag,
-            onMonthChange = { newMonth ->
-                currentYearMonth = newMonth
-                selectedDateForDetails = null
-                dateForBorderOnly = null
-            },
-            onDateClick = { clickedDate ->
-                if (clickedDate == null) {
-                    selectedDateForDetails = null
-                    dateForBorderOnly = null
-                    return@ActualHomeScreenContent
-                }
-                if (dateForBorderOnly?.isEqual(today) == true && clickedDate.isEqual(today)) {
-                    selectedDateForDetails = today
-                    dateForBorderOnly = null
-                } else {
-                    selectedDateForDetails = clickedDate
-                    dateForBorderOnly = null
-                }
-            },
-            onToggleCalendarView = {
-                val switchToMonthly = !isMonthlyView
-                isMonthlyView = switchToMonthly
-                selectedDateForDetails = null
-                dateForBorderOnly = null
-                if (switchToMonthly) {
-                    currentYearMonth = YearMonth.from(today)
-                }
-            },
-            onMonthlyCalendarHeaderTitleClick = {
-                isMonthlyView = false
-                selectedDateForDetails = null
-                dateForBorderOnly = null
-            },
-            onMonthlyCalendarHeaderIconClick = {
-                if (isMonthlyView) {
-                    showYearMonthPickerDialog = true
-                }
-            },
-            onRefreshQuestionClicked = {
-                aiQuestionState = "새로운 AI 질문을 로딩하고 있습니다..."
-                isQuestionAnsweredByAllState = false
-            },
-            onMonthlyTodayButtonClick = {
-                val now = LocalDate.now()
-                currentYearMonth = YearMonth.from(now)
-                selectedDateForDetails = null
-                dateForBorderOnly = now
-                if (!isMonthlyView) isMonthlyView = true
-            },
-            onEditEventRequest = { date, event -> commonEditEventLogic(date, event) },
-            onDeleteEventRequest = onDeleteEventRequestInHomeScreenLambda,
-            // --- 여기가 수정된 부분 ---
-            dateForBorderOnly = dateForBorderOnly // <<< onDeleteEventRequest 뒤에 쉼표로 구분하여 정확히 한 번 전달
-        )
-
-        if (showYearMonthPickerDialog) {
-            YearMonthPickerDialog(
-                initialYearMonth = currentYearMonth,
-                onDismissAndConfirm = { selectedYearMonth ->
-                    if (selectedYearMonth != null) {
-                        currentYearMonth = selectedYearMonth
-                    }
-                    selectedDateForDetails = null
-                    dateForBorderOnly = null
-                    showYearMonthPickerDialog = false
-                }
-            )
-        }
-
-        selectedDateForDetails?.let { date ->
-            if (!showAddEventInputViewFlag) {
-                DateEventsBottomSheet(
-                    visible = true,
-                    targetDate = date,
-                    events = eventsByDateState[date] ?: emptyList(),
-                    onDismiss = { selectedDateForDetails = null },
-                    onAddNewEventClick = { commonEditEventLogic(date, null) },
-                    onEditEvent = { event -> commonEditEventLogic(date, event) },
-                    onDeleteEvent = { event -> onDeleteEventRequestInHomeScreenLambda(date, event) },
-                    modifier = Modifier.align(Alignment.BottomCenter)
+    ) { innerPadding ->
+        NavHost(
+            navController = mainNavController,
+            startDestination = BottomNavItem.Home.route,
+            modifier = Modifier.padding(innerPadding) // Scaffold의 innerPadding 적용
+        ) {
+            composable(BottomNavItem.Home.route) {
+                ActualHomeScreenContent(
+                    // 여기에 ActualHomeScreenContent에 필요한 모든 파라미터를 전달합니다.
+                    // 위에서 정의한 상태 변수들을 사용합니다.
+                    upcomingAnniversaryText = upcomingAnniversaryText,
+                    dDayText = dDayTextState,
+                    dDayTitle = dDayTitleState,
+                    randomCloudResIds = randomCloudResIds,
+                    currentYearMonth = currentYearMonth,
+                    isMonthlyView = isMonthlyView,
+                    selectedDateForDetails = selectedDateForDetails,
+                    dateForBorderOnly = dateForBorderOnly,
+                    eventsByDate = eventsByDateState,
+                    weeklyCalendarData = weeklyCalendarDataState,
+                    isQuestionAnsweredByAll = isQuestionAnsweredByAllState,
+                    aiQuestion = aiQuestionState,
+                    familyQuote = familyQuoteState,
+                    showAddEventInputScreen = false, // 이 값들은 실제 로직에 따라 변경되어야 함
+                    isBottomBarVisible = true,    // 이 값들은 실제 로직에 따라 변경되어야 함
+                    onMonthChange = { currentYearMonth = it },
+                    onDateClick = { selectedDateForDetails = it },
+                    onToggleCalendarView = { isMonthlyView = !isMonthlyView },
+                    onMonthlyCalendarHeaderTitleClick = { isMonthlyView = false },
+                    onMonthlyCalendarHeaderIconClick = { /* TODO */ },
+                    onRefreshQuestionClicked = { /* TODO */ },
+                    onMonthlyTodayButtonClick = { currentYearMonth = YearMonth.from(LocalDate.now()); selectedDateForDetails = LocalDate.now() },
+                    onEditEventRequest = { _, _ -> /* TODO */ },
+                    onDeleteEventRequest = { _, _ -> /* TODO */ }
+                    // modifier = Modifier // NavHost에 이미 innerPadding이 적용되어 있으므로, 여기서는 추가 Modifier 불필요
                 )
             }
-        }
-
-        editingEventState?.first?.let { targetDate ->
-            AnimatedVisibility(
-                visible = showAddEventInputViewFlag,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            ) {
-                AddEventInputView(
-                    visible = showAddEventInputViewFlag,
-                    targetDate = targetDate,
-                    eventDescription = newEventDescriptionState,
-                    isEditing = editingEventState?.second != null,
-                    onDescriptionChange = { desc -> newEventDescriptionState = desc },
-                    onSave = onSaveNewEventLambda,
-                    onCancel = onCancelNewEventInputLambda
-                )
+            composable(BottomNavItem.Message.route) {
+                Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) { Text("메시지 화면") }
+            }
+            composable(BottomNavItem.Gallery.route) {
+                Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) { Text("갤러리 화면") }
+            }
+            composable(BottomNavItem.Settings.route) {
+                SettingsScreen(navController = appNavController) // AppNavigation의 NavController 전달
             }
         }
     }
 }
 
 
-// --- Preview 함수들 수정 ---
-
-@Preview(showBackground = true, name = "홈 (주간 뷰)", widthDp = 390, heightDp = 844)
+@Preview(showBackground = true, name = "전체 홈 화면 (Scaffold 포함)", widthDp = 390, heightDp = 844)
 @Composable
-fun DefaultHomeScreenWeeklyPreview() {
+fun FullHomeScreenPreview() {
     DaytogetherTheme {
-        val today = LocalDate.now()
-        var currentMonthPreview by remember { mutableStateOf(YearMonth.now()) }
-        var selectedDateForDetailsPreview by remember { mutableStateOf<LocalDate?>(null) }
-        var dateForBorderOnlyPreview by remember { mutableStateOf<LocalDate?>(null) }
-
-        val fourEventsSample = listOf(
-            CalendarEvent(description = "주간 샘플 이벤트 1"),
-            CalendarEvent(description = "주간 샘플 이벤트 2")
-        )
-        val previewWeeklyData = (0..6).map { dayOffset ->
-            val date = today.with(JavaDayOfWeek.MONDAY).plusDays(dayOffset.toLong())
-            WeeklyCalendarDay(
-                date = date.dayOfMonth.toString(),
-                dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.KOREAN),
-                isToday = date.isEqual(today),
-                events = if (dayOffset == 0) fourEventsSample else emptyList()
-            )
-        }
-        val previewEventsByDate = mapOf(
-            today.with(JavaDayOfWeek.MONDAY) to fourEventsSample
-        )
-
-        ActualHomeScreenContent(
-            upcomingAnniversaryText = "D-5 주간 미리보기!",
-            dDayText = "D-5",
-            dDayTitle = "주간 행사 (미리보기)",
-            randomCloudResIds = listOf(R.drawable.cloud1),
-            currentYearMonth = currentMonthPreview,
-            // currentYearMonthFormatted 파라미터 제거됨
-            isMonthlyView = false,
-            selectedDateForDetails = selectedDateForDetailsPreview,
-            dateForBorderOnly = dateForBorderOnlyPreview, // 한 번만 전달
-            eventsByDate = previewEventsByDate,
-            weeklyCalendarData = previewWeeklyData,
-            isQuestionAnsweredByAll = false,
-            aiQuestion = "주간 뷰 AI 질문?",
-            familyQuote = "\"주간 미리보기 명언\"",
-            showAddEventInputScreen = false,
-            isBottomBarVisible = selectedDateForDetailsPreview != null,
-            onMonthChange = { np -> currentMonthPreview = np; selectedDateForDetailsPreview = null; dateForBorderOnlyPreview = null },
-            onDateClick = { date -> if(date!=null) { selectedDateForDetailsPreview = date; dateForBorderOnlyPreview = null } }, // 간단한 버전
-            onToggleCalendarView = {},
-            onMonthlyCalendarHeaderTitleClick = {},
-            onMonthlyCalendarHeaderIconClick = {},
-            onRefreshQuestionClicked = {},
-            onMonthlyTodayButtonClick = { val nowL = LocalDate.now(); currentMonthPreview = YearMonth.from(nowL); selectedDateForDetailsPreview = null; dateForBorderOnlyPreview = nowL },
-            onEditEventRequest = { _, _ -> },
-            onDeleteEventRequest = { _, _ -> }
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "홈 (월간 뷰)", widthDp = 390, heightDp = 844)
-@Composable
-fun DefaultHomeScreenMonthlyPreview() {
-    DaytogetherTheme {
-        val today = LocalDate.now()
-        var currentMonthPreview by remember { mutableStateOf(YearMonth.now()) }
-        var selectedDateForDetailsPreview by remember { mutableStateOf<LocalDate?>(null) }
-        var dateForBorderOnlyPreview by remember { mutableStateOf<LocalDate?>(null) }
-
-        val previewEventsByDate = mapOf(
-            currentMonthPreview.atDay(12) to listOf(CalendarEvent(description = "월간 미리보기 이벤트")),
-            today to listOf(CalendarEvent(description = "오늘의 월간 이벤트"))
-        )
-
-        ActualHomeScreenContent(
-            upcomingAnniversaryText = "D-10 월간 미리보기!",
-            dDayText = "D-10",
-            dDayTitle = "월간 행사 (미리보기)",
-            randomCloudResIds = listOf(R.drawable.cloud2),
-            currentYearMonth = currentMonthPreview,
-            // currentYearMonthFormatted 파라미터 제거됨
-            isMonthlyView = true,
-            selectedDateForDetails = selectedDateForDetailsPreview,
-            dateForBorderOnly = dateForBorderOnlyPreview, // 한 번만 전달
-            eventsByDate = previewEventsByDate,
-            weeklyCalendarData = emptyList(),
-            isQuestionAnsweredByAll = true,
-            aiQuestion = "월간 뷰 AI 질문?",
-            familyQuote = "\"월간 미리보기 명언\"",
-            showAddEventInputScreen = false,
-            isBottomBarVisible = selectedDateForDetailsPreview != null,
-            onMonthChange = { np -> currentMonthPreview = np; selectedDateForDetailsPreview = null; dateForBorderOnlyPreview = null },
-            onDateClick = { date -> if(date!=null) {selectedDateForDetailsPreview = date; dateForBorderOnlyPreview = null}}, // 간단한 버전
-            onToggleCalendarView = {},
-            onMonthlyCalendarHeaderTitleClick = {},
-            onMonthlyCalendarHeaderIconClick = {},
-            onRefreshQuestionClicked = {},
-            onMonthlyTodayButtonClick = { val nowL = LocalDate.now(); currentMonthPreview = YearMonth.from(nowL); selectedDateForDetailsPreview = null; dateForBorderOnlyPreview = nowL },
-            onEditEventRequest = { _, _ -> },
-            onDeleteEventRequest = { _, _ -> }
-        )
+        // HomeScreen은 NavController를 필요로 하므로, Preview에서는 rememberNavController()로 임시 전달
+        HomeScreen(appNavController = rememberNavController())
     }
 }
