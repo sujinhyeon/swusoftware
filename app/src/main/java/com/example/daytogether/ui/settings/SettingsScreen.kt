@@ -74,7 +74,7 @@ fun SettingsScreen(navController: NavController) {
                 // 개인정보
                 SettingSectionTitle(title = "개인정보")
                 SettingClickableItem(title = "개인정보") {
-                    // navController.navigate(AppDestinations.EDIT_PROFILE_ROUTE) // TODO: 개인정보 수정 화면 라우트 정의 및 이동
+                    navController.navigate(AppDestinations.EDIT_PROFILE_ROUTE)
                 }
                 ListDivider()
 

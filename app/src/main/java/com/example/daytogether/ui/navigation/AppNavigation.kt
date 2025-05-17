@@ -1,5 +1,6 @@
 package com.example.daytogether.navigation
 
+import com.example.daytogether.ui.auth.EditProfileScreen
 import android.util.Log
 // import androidx.compose.material3.Text // SignUpScreen, FindAccountScreen을 실제 컴포저블로 대체하면 필요 없을 수 있음
 import androidx.compose.runtime.Composable
@@ -24,6 +25,7 @@ object AppDestinations {
     const val MAIN_ROUTE = "main_graph" // 메인 화면 진입점
     const val SIGNUP_ROUTE = "signup"
     const val FIND_ACCOUNT_ROUTE = "find_account"
+    const val EDIT_PROFILE_ROUTE = "edit_profile" // SettingsScreen.kt에서 "개인정보" 항목을 클릭했을 때 이 EditProfileScreen으로 이동
 }
 
 @Composable
@@ -41,6 +43,10 @@ fun AppNavigation(
     Log.d("AppNavigation", "AppNavigation NavHost startDestination: $startDestination")
 
     NavHost(navController = navController, startDestination = startDestination) {
+        composable(AppDestinations.EDIT_PROFILE_ROUTE) {
+            Log.d("AppNavigation", "Current Route: ${AppDestinations.EDIT_PROFILE_ROUTE}")
+            EditProfileScreen(navController = navController)
+        }
         composable(AppDestinations.SPLASH_ROUTE) {
             Log.d("AppNavigation", "Current Route: ${AppDestinations.SPLASH_ROUTE}")
             SplashScreen(
