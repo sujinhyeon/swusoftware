@@ -71,55 +71,54 @@ fun LoginScreen(
     val isLoginButtonEnabled = email.isNotBlank() && password.isNotBlank()
 
     DaytogetherTheme {
-        Column(
+        Column( // 최상위 Column
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 32.dp)
-                .verticalScroll(scrollState),
+                .verticalScroll(scrollState), // 스크롤 가능하게 유지
             horizontalAlignment = Alignment.CenterHorizontally,
-            // "하루 함께" 텍스트 제거로 인해 verticalArrangement 조정, fromOnboarding 상관없이 중앙 정렬 시도
-            verticalArrangement = Arrangement.Center // 항상 중앙 정렬 시도
+            verticalArrangement = Arrangement.SpaceBetween // 콘텐츠를 위아래로 분산시키고, Spacer로 조절
         ) {
-            // "하루 함께" 텍스트 제거 (요청사항 1)
-            // if (!fromOnboarding) { ... } 부분 삭제
+            // (1) 상단 여백용 Spacer (fromOnboarding에 따라 다른 크기)
+            Spacer(modifier = Modifier.height(if (fromOnboarding) 80.dp else 120.dp)) // 값을 늘려서 전체적으로 아래로 밀기
 
-            // 입력 필드 및 버튼들을 담는 Column
+            // (2) 주요 입력 필드 및 버튼들을 담는 Column
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
-                    .padding(top = if(fromOnboarding) 0.dp else 40.dp) // 온보딩이 아닐 경우 상단 여백 추가
+                // 이 Column에는 별도의 verticalArrangement를 주지 않거나,
+                // Arrangement.Center로 내부 요소들을 중앙 정렬할 수 있습니다.
             ) {
                 // ID(Email) 입력 필드 섹션
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically // 레이블과 오류 메시지 수직 정렬
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text( // ID(Email) 레이블 - 박스 외부 좌측 (요청사항 3)
+                        Text(
                             text = "ID(Email)",
-                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), // Figma 이미지 참고하여 스타일 조정
-                            color = TextPrimary, // Color.kt에 정의된 TextPrimary 사용
-                            modifier = Modifier.weight(1f) // 가능한 공간 차지
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium),
+                            color = TextPrimary,
+                            modifier = Modifier.weight(1f)
                         )
-                        if (emailError != null) { // 오류 메시지 - 레이블 오른쪽 (요청사항 2)
+                        if (emailError != null) {
                             Text(
                                 text = emailError!!,
                                 color = ErrorRed,
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), // 폰트 크기 조절
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                                 modifier = Modifier.padding(start = 8.dp)
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(6.dp)) // 레이블과 OutlinedTextField 사이 간격
+                    Spacer(modifier = Modifier.height(6.dp))
                     OutlinedTextField(
                         value = email,
                         onValueChange = {
                             email = it
                             emailError = null
                         },
-                        // label = { Text("ID(Email)") }, // 레이블을 외부 Text로 옮김
-                        placeholder = { Text("이메일 주소를 입력해주세요") }, // 플레이스홀더 추가
+                        placeholder = { Text("이메일 주소를 입력해주세요") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
@@ -133,31 +132,29 @@ fun LoginScreen(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = if (emailError != null) ErrorRed else MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = if (emailError != null) ErrorRed else MaterialTheme.colorScheme.outline,
-                            errorBorderColor = ErrorRed, // isError가 true일 때 테두리 색상
+                            errorBorderColor = ErrorRed,
                             focusedTextColor = TextPrimary,
                             unfocusedTextColor = TextPrimary,
                             cursorColor = MaterialTheme.colorScheme.primary
                         ),
-                        // supportingText는 이제 사용 안 함 (오류 메시지 위치 변경)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp)) // ID와 Password 필드 사이 간격
+                Spacer(modifier = Modifier.height(20.dp))
 
                 // Password 입력 필드 섹션
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Text( // Password 레이블 - 박스 외부 좌측 (요청사항 3)
+                    Text(
                         text = "Password",
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium),
                         color = TextPrimary,
-                        modifier = Modifier.fillMaxWidth() // Row 필요 없이 Column 내에서 정렬
+                        modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        // label = { Text("Password") }, // 레이블을 외부 Text로 옮김
-                        placeholder = { Text("비밀번호를 입력해주세요") }, // 플레이스홀더 추가
+                        placeholder = { Text("비밀번호를 입력해주세요") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
@@ -210,11 +207,11 @@ fun LoginScreen(
                     SocialLoginIconButton(iconRes = R.drawable.ic_logo_naver, text = "네이버") { /* ... */ }
                     SocialLoginIconButton(iconRes = R.drawable.ic_logo_kakao, text = "카카오") { /* ... */ }
                 }
-            }
+            } // 주요 입력 필드 Column 끝
 
-            // 회원가입, 아이디/비밀번호 찾기 링크 (수직 배치 유지)
+            // (3) 하단 링크들을 담는 Column (이 Column과 주요 입력 필드 Column 사이에 Spacer를 추가할 수도 있음)
             Column(
-                modifier = Modifier.padding(top = 40.dp, bottom = if (fromOnboarding) 60.dp else 32.dp), // 하단 여백 조절
+                modifier = Modifier.padding(bottom = if (fromOnboarding) 60.dp else 32.dp), // 하단 여백
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -222,7 +219,7 @@ fun LoginScreen(
                     text = AnnotatedString("회원가입"),
                     onClick = { navController.navigate(AppDestinations.SIGNUP_ROUTE) },
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        color = TextPrimary, // 기본 텍스트 색상 사용
+                        color = TextPrimary,
                         textDecoration = TextDecoration.Underline
                     )
                 )
