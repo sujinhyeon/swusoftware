@@ -16,42 +16,51 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// 앱의 라이트 테마 색상표 (새로운 색상 적용)
+// 앱의 라이트 테마 색상표
 private val LightColorScheme = lightColorScheme(
-    primary = ButtonActiveBackground, // #533A28 (버튼 활성 배경, 주요 액션 색상)
-    onPrimary = ButtonActiveText,     // #FFF3D9 (Primary 색상 위의 텍스트/아이콘)
-    secondary = AnniversaryBoardBackground, // #CFBA94 (보조 색상, 전광판 배경 등)
-    onSecondary = TextPrimary,        // #533A28 (Secondary 색상 위의 텍스트)
-    tertiary = NavIconUnselected,     // #CFBA94 (추가적인 강조 색상)
-    onTertiary = TextPrimary,         // #533A28
-    background = ScreenBackground,    // #FFF3D9 (화면 전체 배경)
-    onBackground = TextPrimary,       // #533A28 (배경 위의 텍스트)
-    surface = ScreenBackground,       // #FFF3D9 (카드, 하단 바 등의 표면 색상 - 필요시 조정)
-    onSurface = TextPrimary,          // #533A28 (표면 위의 텍스트)
-    error = ErrorRed,                 // #FB1F1F
-    onError = Color.White             // 에러 색상 위의 텍스트
-    // 다른 Material3 색상들도 필요에 따라 정의 가능
+    primary = ButtonActiveBackground,   // #533A28 (앱의 주요 액션/강조 색상)
+    onPrimary = ButtonActiveText,       // #FFF3D9 (Primary 색상 위의 텍스트/아이콘)
+
+    secondary = AnniversaryBoardBackground, // #CFBA94 (보조 색상, 덜 중요한 요소)
+    onSecondary = TextPrimary,          // #533A28 (Secondary 색상 위의 텍스트)
+
+    tertiary = NavIconUnselected,       // #CFBA94 (추가적인 강조 또는 보조 색상)
+    onTertiary = TextPrimary,           // #533A28
+
+    background = ScreenBackground,      // #FFF3D9 (대부분의 화면 배경)
+    onBackground = TextPrimary,         // #533A28 (배경 위의 기본 텍스트)
+
+    surface = ScreenBackground,         // #FFF3D9 (카드, 시트, 메뉴 등의 표면)
+    onSurface = TextPrimary,            // #533A28 (표면 위의 텍스트)
+
+    surfaceVariant = Brown100,          // #CFBA94 alpha 0.1 (표면의 변형, 약간 다른 배경색 등)
+    onSurfaceVariant = TextPrimary,     // surfaceVariant 위의 텍스트
+
+    outline = SelectedMonthlyBorder,    // #533A28 (입력 필드 테두리, 구분선 등)
+
+    error = ErrorRed,                   // #FB1F1F
+    onError = Color.White               // 에러 색상 위의 텍스트
 )
 
-// TODO: 다크 테마를 지원하려면 DarkColorScheme도 Figma 디자인에 맞게 정의합니다.
-// 현재는 라이트 테마와 유사하게 설정하거나 기본값으로 둡니다.
+// TODO: 다크 테마 디자인이 확정되면 DarkColorScheme을 구체적으로 정의합니다.
+// 현재는 라이트 테마 색상을 기반으로 임시 설정하거나 Material 기본값을 활용할 수 있습니다.
 private val DarkColorScheme = darkColorScheme(
-    primary = NavIconUnselected, // 예시
-    onPrimary = TextPrimary,
-    secondary = ButtonActiveBackground,
-    onSecondary = ButtonActiveText,
-    background = Color(0xFF1E1E1E), // 어두운 배경
-    onBackground = Color(0xFFE0E0E0), // 밝은 텍스트
-    surface = Color(0xFF2A2A2A),
-    onSurface = Color(0xFFE0E0E0),
-    error = ErrorRed,
-    onError = Color.Black
+    primary = NavIconUnselected, // 예: #CFBA94
+    onPrimary = TextPrimary,     // 예: #533A28
+    secondary = ButtonActiveBackground, // 예: #533A28
+    onSecondary = ButtonActiveText,    // 예: #FFF3D9
+    background = Color(0xFF1C1B1F), // 어두운 배경 (Material3 기본 다크 배경 근사치)
+    onBackground = Color(0xFFE6E1E5), // 밝은 텍스트
+    surface = Color(0xFF1C1B1F), // 카드 등
+    onSurface = Color(0xFFE6E1E5),
+    error = Color(0xFFF2B8B5), // Material3 다크 에러 색상
+    onError = Color(0xFF601410)
 )
 
 @Composable
 fun DaytogetherTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Dynamic Color는 앱 고유 테마와 충돌할 수 있어 false로 유지
+    dynamicColor: Boolean = false, // 앱 고유 테마 유지를 위해 false 권장
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -59,22 +68,23 @@ fun DaytogetherTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColorScheme // 다크 모드 지원 시 (현재는 예시)
-        else -> LightColorScheme
+        darkTheme -> DarkColorScheme // 다크 모드 활성화 시
+        else -> LightColorScheme      // 기본은 라이트 모드
     }
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            // 상태바 색상을 앱 배경색과 동일하게 하거나, Primary 색상으로 설정
-            window.statusBarColor = colorScheme.background.toArgb() // 또는 colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme // 라이트 테마일 때 상태바 아이콘 어둡게
+            // 상태바 색상을 앱 배경색과 동일하게 설정
+            window.statusBarColor = colorScheme.background.toArgb()
+            // 라이트 테마일 때 상태바 아이콘을 어둡게, 다크 테마일 때 밝게 설정
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = AppTypography, // GothicA1 폰트가 적용된 AppTypography 사용
+        typography = AppTypography, // 위에서 정의한 AppTypography 사용
         content = content
     )
 }

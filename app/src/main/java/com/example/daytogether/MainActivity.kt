@@ -1,5 +1,6 @@
 package com.example.daytogether
 
+import com.example.daytogether.navigation.AppNavigation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -26,64 +27,22 @@ import com.example.daytogether.ui.theme.NavIconSelected
 import com.example.daytogether.ui.theme.NavIconUnselected
 import com.example.daytogether.ui.theme.TextPrimary
 import com.example.daytogether.ui.home.HomeScreen
+// import dagger.hilt.android.AndroidEntryPoint // Hilt 사용 시 (지금은 주석 처리)
 
-
-@OptIn(ExperimentalMaterial3Api::class)
+// @AndroidEntryPoint // Hilt 사용 시
 class MainActivity : ComponentActivity() {
+
+    // @Inject // Hilt 사용 시 DataStore Repository 주입 예시
+    // lateinit var userPreferencesRepository: UserPreferencesRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             DaytogetherTheme {
-                val navController = rememberNavController()
-                val bottomNavItems = listOf(
-                    BottomNavItem.Home,
-                    BottomNavItem.Message,
-                    BottomNavItem.Gallery,
-                    BottomNavItem.Settings
+                // 기존 Scaffold 및 AppNavigationHost 대신 AppNavigation() 호출
+                AppNavigation(
+                    // userPreferencesRepository = userPreferencesRepository // DataStore 사용 시 주입
                 )
-
-                Scaffold(
-                    bottomBar = {
-                        Column {
-                            Divider(color = TextPrimary.copy(alpha = 0.3f), thickness = 1.dp)
-                            NavigationBar(
-                                containerColor = MaterialTheme.colorScheme.surface
-                            ) {
-                                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                                val currentDestination = navBackStackEntry?.destination
-
-                                bottomNavItems.forEach { screen ->
-                                    val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
-                                    NavigationBarItem(
-                                        icon = {
-                                            Icon(
-                                                imageVector = ImageVector.vectorResource(id = screen.iconResId),
-                                                contentDescription = screen.label,
-                                                tint = if (isSelected) NavIconSelected else NavIconUnselected
-                                            )
-                                        },
-                                        selected = isSelected,
-                                        onClick = {
-                                            navController.navigate(screen.route) {
-                                                popUpTo(navController.graph.findStartDestination().id) {
-                                                    saveState = true
-                                                }
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
-                                        },
-                                        alwaysShowLabel = false,
-                                        colors = NavigationBarItemDefaults.colors(
-                                            indicatorColor = MaterialTheme.colorScheme.surface
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-                ) { innerPadding ->
-                    AppNavigationHost(navController = navController, modifier = Modifier.padding(innerPadding))
-                }
             }
         }
     }
