@@ -19,7 +19,7 @@ val AppTypography = Typography(
     headlineLarge = TextStyle(
         fontFamily = GothicA1,
         fontWeight = FontWeight.ExtraBold, // 충분히 굵게
-        fontSize = 26.sp, // Figma 이미지와 유사하게 조절
+        fontSize = 18.sp, // Figma 이미지와 유사하게 조절
         lineHeight = 34.sp,
         letterSpacing = 0.sp
     ),
@@ -27,7 +27,7 @@ val AppTypography = Typography(
     bodyMedium = TextStyle(
         fontFamily = GothicA1,
         fontWeight = FontWeight.Normal, // 일반 두께
-        fontSize = 15.sp, // Figma 이미지와 유사하게 조절
+        fontSize = 12.sp, // Figma 이미지와 유사하게 조절
         lineHeight = 22.sp,
         letterSpacing = 0.25.sp
     ),

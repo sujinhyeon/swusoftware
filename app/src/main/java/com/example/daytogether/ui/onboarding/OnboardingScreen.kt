@@ -1,5 +1,6 @@
 package com.example.daytogether.ui.onboarding
 
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -31,19 +32,21 @@ data class OnboardingPageItem(
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun OnboardingScreen(navController: NavController) {
-    val pagerState = rememberPagerState()
+    // ... (pagerState 및 onboardingPages 정의 유지) ...
+    val pagerState = rememberPagerState() // pagerState를 여기서 선언
     val onboardingPages = listOf(
         OnboardingPageItem(
-            imageRes = R.drawable.ic_cloud_sad, // 슬픈 구름 PNG
-            title = "가족과의 대화,\n점점 줄어들고 있진 않나요?", // Figma 온보딩1 제목 참조 (Type.kt의 headlineLarge 스타일 적용)
-            description = "바쁜 일상 속 놓치기 쉬운 소중한 대화의 순간들\n돌아보는 시간을 가져보세요." // Figma 온보딩1 설명 참조 (Type.kt의 bodyMedium 스타일 적용)
+            imageRes = R.drawable.ic_cloud_sad,
+            title = "가족과의 대화,\n점점 줄어들고 있진 않나요?",
+            description = "바쁜 일상 속 놓치기 쉬운 소중한 대화의 순간들\n돌아보는 시간을 가져보세요."
         ),
         OnboardingPageItem(
-            imageRes = R.drawable.ic_cloud_happy, // 행복한 구름 PNG
-            title = "소소한 대화가 만드는\n따뜻한 가족의 유대감", // Figma 온보딩2 제목 참조
-            description = "하루함께가 건네는 한 줄 질문으로\n서로의 하루를 채워 보세요" // Figma 온보딩2 설명 참조
+            imageRes = R.drawable.ic_cloud_happy,
+            title = "소소한 대화가 만드는\n따뜻한 가족의 유대감",
+            description = "하루함께가 건네는 한 줄 질문으로\n서로의 하루를 채워 보세요"
         )
     )
+
 
     DaytogetherTheme {
         Column(
@@ -52,7 +55,7 @@ fun OnboardingScreen(navController: NavController) {
                 .background(MaterialTheme.colorScheme.background)
         ) {
             HorizontalPager(
-                count = 3, // 온보딩 2페이지 + 로그인 1페이지
+                count = 3,
                 state = pagerState,
                 modifier = Modifier.weight(1f)
             ) { pageIndex ->
@@ -67,9 +70,9 @@ fun OnboardingScreen(navController: NavController) {
                 pagerState = pagerState,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .padding(vertical = 32.dp), // Figma 이미지 참고하여 패딩 조절
-                activeColor = PagerIndicatorActive, // Color.kt에 정의
-                inactiveColor = PagerIndicatorInactive, // Color.kt에 정의
+                    .padding(vertical = 32.dp),
+                activeColor = PagerIndicatorActive,
+                inactiveColor = PagerIndicatorInactive,
                 indicatorWidth = 10.dp,
                 indicatorHeight = 10.dp,
                 spacing = 8.dp
@@ -83,38 +86,48 @@ fun OnboardingPageContent(item: OnboardingPageItem) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 40.dp), // Figma 이미지 참고, 좌우 패딩
+            .padding(horizontal = 30.dp)
+            // 전체적인 내용을 아래로 조금 더 내리기 위해 상단에 여백 추가 또는 verticalArrangement 조정
+            .padding(top = 120.dp), // <<-- 상단 여백 추가 (값은 조절 가능)
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center // 콘텐츠를 중앙에 배치
+        verticalArrangement = Arrangement.Top // 위에서부터 배치 시작 (Spacer로 간격 조절 용이)
     ) {
+        Spacer(modifier = Modifier.weight(0.15f)) // 상단 공간을 약간 띄움 (비율로 조정)
+
         Image(
             painter = painterResource(id = item.imageRes),
             contentDescription = item.title,
             modifier = Modifier
-                .fillMaxWidth(0.7f) // 구름 이미지 너비 조절
-                .aspectRatio(1.8f) // 구름 이미지 비율 (가로가 더 길게)
-                .padding(bottom = 48.dp) // Figma 이미지 참고, 아이콘과 제목 사이 간격
+                .size(width = 800.dp, height = 440.dp)
+                .padding(bottom = 0.dp) // 이미지와 제목 사이 간격 (조절)
         )
+
+        Spacer(modifier = Modifier.height(0.dp)) // 제목 위 간격 (조절)
+
         Text(
             text = item.title,
-            style = MaterialTheme.typography.headlineLarge, // Type.kt에서 정의
-            color = MaterialTheme.colorScheme.primary, // TextPrimary 색상
+            style = MaterialTheme.typography.headlineLarge.copy( // Type.kt의 스타일을 기반으로 굵기만 변경
+                fontWeight = FontWeight.Medium // 기존 ExtraBold에서 Bold로 변경 (또는 SemiBold)
+            ),
+            color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 24.dp) // Figma 이미지 참고, 제목과 구분선 사이 간격
+            modifier = Modifier.padding(bottom = 20.dp) // 제목과 구분선 사이 간격 (조절)
         )
         Divider(
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), // 구분선 색상 및 투명도
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
             thickness = 1.dp,
             modifier = Modifier
-                .fillMaxWidth(0.85f) // 구분선 길이
-                .padding(bottom = 24.dp) // Figma 이미지 참고, 구분선과 설명 사이 간격
+                .fillMaxWidth(0.9f)
+                .padding(bottom = 20.dp) // 구분선과 설명 사이 간격 (조절)
         )
         Text(
             text = item.description,
-            style = MaterialTheme.typography.bodyMedium, // Type.kt에서 정의
-            color = MaterialTheme.colorScheme.onBackground, // TextPrimary 또는 유사한 어두운 색상
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center
         )
+
+        Spacer(modifier = Modifier.weight(0.25f)) // 하단 공간 확보 (페이지 표시기와 겹치지 않도록)
     }
 }
 
@@ -126,16 +139,3 @@ fun OnboardingScreenPreview() {
     }
 }
 
-@Preview(showBackground = true, widthDp = 390, heightDp = 844)
-@Composable
-fun OnboardingPage1Preview() {
-    DaytogetherTheme {
-        OnboardingPageContent(
-            item = OnboardingPageItem(
-                R.drawable.ic_cloud_sad,
-                "가족과의 대화,\n점점 줄어들고 있진 않나요?",
-                "바쁜 일상 속 놓치기 쉬운 소중한 대화의 순간들\n돌아보는 시간을 가져보세요."
-            )
-        )
-    }
-}
