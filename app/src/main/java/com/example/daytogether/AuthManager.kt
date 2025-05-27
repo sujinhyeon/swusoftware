@@ -1,6 +1,9 @@
 package com.example.daytogether
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.firestore.FirebaseFirestore
 
 object AuthManager {
@@ -26,7 +29,8 @@ object AuthManager {
                         "member_id" to memberId,
                         "name" to name,
                         "email" to email,
-                        "position" to position
+                        "position" to position,
+                        "invitedChatRoomId" to null
                     )
 
                     db.collection("members")
@@ -51,7 +55,7 @@ object AuthManager {
                 if (task.isSuccessful) {
                     onResult(true, null)
                 } else {
-                    onResult(false, task.exception?.message)
+                    onResult(false, getFriendlyErrorMessage(task.exception))
                 }
             }
     }
@@ -67,5 +71,15 @@ object AuthManager {
 
     fun isUserLoggedIn(): Boolean {
         return auth.currentUser != null
+    }
+
+    // 에러 유형 메세지 매핑
+    fun getFriendlyErrorMessage(e: Exception?): String {
+        return when (e) {
+            is FirebaseAuthInvalidCredentialsException -> "이메일 또는 비밀번호가 잘못되었습니다."
+            is FirebaseAuthInvalidUserException -> "존재하지 않는 사용자입니다."
+            is FirebaseAuthUserCollisionException -> "이미 존재하는 계정입니다."
+            else -> "문제가 발생했습니다. 다시 시도해주세요."
+        }
     }
 }

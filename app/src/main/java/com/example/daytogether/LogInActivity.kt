@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.daytogether.ui.theme.DaytogetherTheme
 
@@ -36,10 +37,23 @@ class LoginActivity : ComponentActivity() {
                     TextField(value = email, onValueChange = { email = it }, label = { Text("이메일") })
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    TextField(value = password, onValueChange = { password = it }, label = { Text("비밀번호") })
+                    TextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("비밀번호") },
+                        visualTransformation = PasswordVisualTransformation()
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(onClick = {
+                        if (email.isBlank() || password.isBlank()) {
+                            Toast.makeText(this@LoginActivity, "이메일과 비밀번호를 모두 입력하세요.", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        if (password.length < 6) {
+                            Toast.makeText(this@LoginActivity, "비밀번호는 최소 6자리 이상이어야 합니다.", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
                         AuthManager.loginUser(email, password) { success, message ->
                             if (success) {
                                 Toast.makeText(this@LoginActivity, "로그인 성공", Toast.LENGTH_SHORT).show()

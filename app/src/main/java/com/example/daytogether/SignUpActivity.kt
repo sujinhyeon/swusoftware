@@ -40,11 +40,34 @@ class SignUpActivity : ComponentActivity() {
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(onClick = {
+                        // 이름 유효성 검사
+                        if (name.length < 2) {
+                            Toast.makeText(this@SignUpActivity, "이름은 두 글자 이상이어야 합니다", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        // 이메일 유효성 검사
+                        val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")
+                        if (!email.matches(emailRegex)) {
+                            Toast.makeText(this@SignUpActivity, "유효한 이메일 주소를 입력해주세요", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        // 비밀번호 유효성 검사
+                        val passwordRegex = Regex("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#\$%^&*()_+=<>?]).{8,}$")
+                        if (!password.matches(passwordRegex)) {
+                            Toast.makeText(
+                                this@SignUpActivity,
+                                "비밀번호는 영어+숫자+특수문자를 포함한 8자리 이상이어야 합니다",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            return@Button
+                        }
+
                         AuthManager.registerUser(name, email, password, position) { success, message ->
                             if (success) {
                                 Toast.makeText(this@SignUpActivity, "회원가입 성공", Toast.LENGTH_SHORT).show()
-                                startActivity(Intent(this@SignUpActivity, LoginActivity::class.java))
-                                finish()
+                                startActivity(Intent(this@SignUpActivity, MainActivity::class.java))
                             } else {
                                 Toast.makeText(this@SignUpActivity, "회원가입 실패: $message", Toast.LENGTH_SHORT).show()
                             }
@@ -52,6 +75,7 @@ class SignUpActivity : ComponentActivity() {
                     }) {
                         Text("회원가입")
                     }
+
                 }
             }
         }
