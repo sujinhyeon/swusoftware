@@ -10,3 +10,11 @@ serviceAccountKey.json
 # VSCode
 .vscode/
 firebase-service-account.json
+
+# Android Studio / JetBrains IDE
+.idea/
+.gradle/
+*.iml
+buile/
+*.apk
+*.ap_
